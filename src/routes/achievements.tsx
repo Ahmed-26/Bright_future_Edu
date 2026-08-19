@@ -15,8 +15,11 @@ export const Route = createFileRoute("/achievements")({
         content:
           "Student distinctions, academic awards, competition placings, scholarships and institute milestones.",
       },
-      { property: "og:title", content: "Achievements | Meridian Academy" },
-      { property: "og:description", content: "Awards, scholarships and milestones from across the academy." },
+      { property: "og:title", content: "Achievements | Bright Future Group of Education" },
+      {
+        property: "og:description",
+        content: "Awards, scholarships and milestones from across the academy.",
+      },
     ],
   }),
   component: AchievementsPage,
@@ -68,14 +71,20 @@ function AchievementsPage() {
                     <span className="grid size-11 place-items-center rounded-xl bg-[image:var(--gradient-gold)] text-accent-foreground">
                       <Award className="size-5" />
                     </span>
-                    <span className="font-display text-sm font-semibold text-muted-foreground">{a.year}</span>
+                    <span className="font-display text-sm font-semibold text-muted-foreground">
+                      {a.year}
+                    </span>
                   </div>
                   <p className="mt-5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-secondary">
                     {a.category}
                   </p>
                   <h2 className="mt-2 text-lg font-semibold">{a.title}</h2>
-                  {a.student && <p className="mt-2 text-sm font-medium text-foreground">{a.student}</p>}
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{a.description}</p>
+                  {a.student && (
+                    <p className="mt-2 text-sm font-medium text-foreground">{a.student}</p>
+                  )}
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {a.description}
+                  </p>
                 </article>
               </Reveal>
             ))}

@@ -5,7 +5,7 @@ export const site = {
   name: "Bright Future Group of Education",
   tagline: "O Level · A Level · IGCSE",
   phone: "+92 300 000 0000",
-  email: "admissions@meridian-academy.demo",
+  email: "admissions.bright-future.com",
   address: "12 Scholars Avenue, Gulberg III, Lahore, Pakistan",
   hours: "Mon – Sat, 9:00 AM – 8:00 PM",
   socials: { facebook: "#", instagram: "#", youtube: "#", whatsapp: "#" },

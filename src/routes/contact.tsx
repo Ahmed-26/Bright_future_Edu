@@ -12,9 +12,10 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact Us | Visit, Call or Message the Academy" },
       {
         name: "description",
-        content: "Campus address, phone, email, opening hours and a direct message form for the academy.",
+        content:
+          "Campus address, phone, email, opening hours and a direct message form for the academy.",
       },
-      { property: "og:title", content: "Contact | Meridian Academy" },
+      { property: "og:title", content: "Contact | Bright Future Group of Education" },
       { property: "og:description", content: "Address, phone, email and opening hours." },
     ],
   }),
@@ -69,12 +70,17 @@ function ContactPage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
           <div className="space-y-6">
             {details.map(({ Icon, label, value }) => (
-              <div key={label} className="flex gap-4 rounded-2xl border border-border bg-card p-6 shadow-card">
+              <div
+                key={label}
+                className="flex gap-4 rounded-2xl border border-border bg-card p-6 shadow-card"
+              >
                 <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-primary">
                   <Icon className="size-5" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {label}
+                  </p>
                   <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
                 </div>
               </div>
@@ -96,23 +102,49 @@ function ContactPage() {
             {[
               { name: "name", label: "Your name", placeholder: "Full name", type: "text" },
               { name: "email", label: "Email", placeholder: "you@example.com", type: "email" },
-              { name: "phone", label: "Phone (optional)", placeholder: "+92 300 0000000", type: "text" },
-              { name: "subject", label: "Subject", placeholder: "Admissions enquiry", type: "text" },
+              {
+                name: "phone",
+                label: "Phone (optional)",
+                placeholder: "+92 300 0000000",
+                type: "text",
+              },
+              {
+                name: "subject",
+                label: "Subject",
+                placeholder: "Admissions enquiry",
+                type: "text",
+              },
             ].map((f) => (
               <label key={f.name} className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {f.label}
                 </span>
-                <input name={f.name} type={f.type} placeholder={f.placeholder} maxLength={255} className={inputClass} />
-                {errors[f.name] && <span className="mt-1.5 block text-xs text-destructive">{errors[f.name]}</span>}
+                <input
+                  name={f.name}
+                  type={f.type}
+                  placeholder={f.placeholder}
+                  maxLength={255}
+                  className={inputClass}
+                />
+                {errors[f.name] && (
+                  <span className="mt-1.5 block text-xs text-destructive">{errors[f.name]}</span>
+                )}
               </label>
             ))}
             <label className="block sm:col-span-2">
               <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Message
               </span>
-              <textarea name="message" rows={5} maxLength={1000} className={inputClass} placeholder="How can we help?" />
-              {errors.message && <span className="mt-1.5 block text-xs text-destructive">{errors.message}</span>}
+              <textarea
+                name="message"
+                rows={5}
+                maxLength={1000}
+                className={inputClass}
+                placeholder="How can we help?"
+              />
+              {errors.message && (
+                <span className="mt-1.5 block text-xs text-destructive">{errors.message}</span>
+              )}
             </label>
             <div className="sm:col-span-2">
               <button

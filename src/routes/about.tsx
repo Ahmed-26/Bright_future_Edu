@@ -15,18 +15,37 @@ export const Route = createFileRoute("/about")({
         content:
           "Learn how the academy teaches Cambridge O Level, A Level and IGCSE: our mission, values, history and academic approach.",
       },
-      { property: "og:title", content: "About Meridian Academy" },
-      { property: "og:description", content: "Our mission, values, history and academic approach." },
+      { property: "og:title", content: "About Bright Future Group of Education" },
+      {
+        property: "og:description",
+        content: "Our mission, values, history and academic approach.",
+      },
     ],
   }),
   component: AboutPage,
 });
 
 const pillars = [
-  { Icon: Target, title: "Our Mission", text: "To give every student the technique, confidence and discipline to sit an international exam without fear." },
-  { Icon: Eye, title: "Our Vision", text: "A Pakistani academy whose teaching standards stand comfortably beside any international school." },
-  { Icon: HeartHandshake, title: "Core Values", text: "Honesty about progress, respect in the classroom, and no shortcuts around genuine understanding." },
-  { Icon: Compass, title: "Our Approach", text: "Concept first, then technique, then timing — assessed continuously against real mark schemes." },
+  {
+    Icon: Target,
+    title: "Our Mission",
+    text: "To give every student the technique, confidence and discipline to sit an international exam without fear.",
+  },
+  {
+    Icon: Eye,
+    title: "Our Vision",
+    text: "A Pakistani academy whose teaching standards stand comfortably beside any international school.",
+  },
+  {
+    Icon: HeartHandshake,
+    title: "Core Values",
+    text: "Honesty about progress, respect in the classroom, and no shortcuts around genuine understanding.",
+  },
+  {
+    Icon: Compass,
+    title: "Our Approach",
+    text: "Concept first, then technique, then timing — assessed continuously against real mark schemes.",
+  },
 ];
 
 function AboutPage() {
@@ -51,15 +70,18 @@ function AboutPage() {
             />
           </Reveal>
           <Reveal delay={120}>
-            <h2 className="text-3xl font-semibold">Teaching built around the examiner, not the textbook</h2>
+            <h2 className="text-3xl font-semibold">
+              Teaching built around the examiner, not the textbook
+            </h2>
             <p className="mt-5 leading-relaxed text-muted-foreground">
-              We teach the syllabus the way it is assessed. Every topic is introduced conceptually, practised
-              through structured questions, and then rehearsed under exam timing against official mark schemes.
-              Students learn why an answer earns a mark, not just what the answer is.
+              We teach the syllabus the way it is assessed. Every topic is introduced conceptually,
+              practised through structured questions, and then rehearsed under exam timing against
+              official mark schemes. Students learn why an answer earns a mark, not just what the
+              answer is.
             </p>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Class sizes stay small deliberately. Faculty mark work personally, keep an error log for each
-              student, and meet parents each term with evidence rather than impressions.
+              Class sizes stay small deliberately. Faculty mark work personally, keep an error log
+              for each student, and meet parents each term with evidence rather than impressions.
             </p>
           </Reveal>
         </div>

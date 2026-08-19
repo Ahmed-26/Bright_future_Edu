@@ -16,7 +16,7 @@ export const Route = createFileRoute("/courses")({
         content:
           "Browse Cambridge and Edexcel O Level, A Level and IGCSE courses with fees, schedules, syllabus codes and faculty.",
       },
-      { property: "og:title", content: "Courses | Meridian Academy" },
+      { property: "og:title", content: "Courses | Bright Future Group of Education" },
       {
         property: "og:description",
         content: "Filter O Level, A Level and IGCSE courses by level, exam board and subject.",
@@ -228,7 +228,8 @@ function CoursesPage() {
         <div className="mt-16 rounded-2xl bg-hero px-8 py-12 text-center text-primary-foreground">
           <h2 className="text-2xl font-semibold md:text-3xl">Not sure which programme fits?</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/70">
-            Tell us the subjects and series your child is sitting and our academic team will map a schedule.
+            Tell us the subjects and series your child is sitting and our academic team will map a
+            schedule.
           </p>
           <Link
             to="/admissions"

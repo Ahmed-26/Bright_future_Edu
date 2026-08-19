@@ -80,13 +80,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Meridian Academy | O Level, A Level & IGCSE Institute" },
+      { title: "Bright Future Group of Education | O Level, A Level & IGCSE Institute" },
       {
         name: "description",
         content:
           "Premium O Level, A Level and IGCSE preparation with experienced teachers and proven academic results.",
       },
-      { property: "og:title", content: "Meridian Academy" },
+      { property: "og:title", content: "Bright Future Group of Education" },
       {
         property: "og:description",
         content: "Premium Cambridge O Level, A Level and IGCSE preparation.",

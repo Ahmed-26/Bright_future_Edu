@@ -26,7 +26,7 @@ export const Route = createFileRoute("/subjects")({
         content:
           "Explore every subject taught at the academy across O Level, A Level and IGCSE, from Accounting to Pakistan Studies.",
       },
-      { property: "og:title", content: "Subjects | Meridian Academy" },
+      { property: "og:title", content: "Subjects | Bright Future Group of Education" },
       { property: "og:description", content: "All O Level, A Level and IGCSE subjects we teach." },
     ],
   }),
@@ -78,7 +78,9 @@ function SubjectsPage() {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+                  <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {s.description}
+                  </p>
                   <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
                     <span className="text-xs font-semibold text-muted-foreground">
                       {s.courses} course{s.courses > 1 ? "s" : ""}

@@ -15,8 +15,11 @@ export const Route = createFileRoute("/admissions")({
         content:
           "Apply to the academy: admission process, available levels and subjects, and the online enrollment form.",
       },
-      { property: "og:title", content: "Admissions | Meridian Academy" },
-      { property: "og:description", content: "How to apply and enroll for the next academic session." },
+      { property: "og:title", content: "Admissions | Bright Future Group of Education" },
+      {
+        property: "og:description",
+        content: "How to apply and enroll for the next academic session.",
+      },
     ],
   }),
   component: AdmissionsPage,
@@ -35,10 +38,22 @@ const schema = z.object({
 });
 
 const steps = [
-  { title: "Submit an enquiry", text: "Send the enrollment form with the student's level, board and subjects." },
-  { title: "Placement discussion", text: "Our academic team calls within one working day to review targets." },
-  { title: "Schedule mapping", text: "We build a weekly timetable around the student's school hours." },
-  { title: "Confirm and begin", text: "Fee is settled, seat is reserved and classes begin the same week." },
+  {
+    title: "Submit an enquiry",
+    text: "Send the enrollment form with the student's level, board and subjects.",
+  },
+  {
+    title: "Placement discussion",
+    text: "Our academic team calls within one working day to review targets.",
+  },
+  {
+    title: "Schedule mapping",
+    text: "We build a weekly timetable around the student's school hours.",
+  },
+  {
+    title: "Confirm and begin",
+    text: "Fee is settled, seat is reserved and classes begin the same week.",
+  },
 ];
 
 const inputClass =
@@ -114,7 +129,10 @@ function AdmissionsPage() {
             <h2 className="text-xl font-semibold">Available levels &amp; boards</h2>
             <div className="mt-5 flex flex-wrap gap-2">
               {[...levels, ...boards.filter((b) => b !== "Other")].map((l) => (
-                <span key={l} className="rounded-full bg-muted px-3.5 py-1.5 text-xs font-semibold text-foreground">
+                <span
+                  key={l}
+                  className="rounded-full bg-muted px-3.5 py-1.5 text-xs font-semibold text-foreground"
+                >
                   {l}
                 </span>
               ))}
@@ -148,8 +166,8 @@ function AdmissionsPage() {
         <div className="mt-16 rounded-2xl border border-border bg-card p-8 shadow-elegant md:p-10">
           <h2 className="text-2xl font-semibold">Enrollment form</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Submissions are validated in the browser for this preview; they will be stored once the backend is
-            connected.
+            Submissions are validated in the browser for this preview; they will be stored once the
+            backend is connected.
           </p>
 
           {submitted && (
@@ -160,16 +178,37 @@ function AdmissionsPage() {
 
           <form onSubmit={onSubmit} noValidate className="mt-8 grid gap-5 md:grid-cols-2">
             <Field label="Student name" error={errors.student}>
-              <input name="student" maxLength={100} className={inputClass} placeholder="Full name" />
+              <input
+                name="student"
+                maxLength={100}
+                className={inputClass}
+                placeholder="Full name"
+              />
             </Field>
             <Field label="Parent / guardian name" error={errors.guardian}>
-              <input name="guardian" maxLength={100} className={inputClass} placeholder="Full name" />
+              <input
+                name="guardian"
+                maxLength={100}
+                className={inputClass}
+                placeholder="Full name"
+              />
             </Field>
             <Field label="Email" error={errors.email}>
-              <input name="email" type="email" maxLength={255} className={inputClass} placeholder="you@example.com" />
+              <input
+                name="email"
+                type="email"
+                maxLength={255}
+                className={inputClass}
+                placeholder="you@example.com"
+              />
             </Field>
             <Field label="Phone" error={errors.phone}>
-              <input name="phone" maxLength={30} className={inputClass} placeholder="+92 300 0000000" />
+              <input
+                name="phone"
+                maxLength={30}
+                className={inputClass}
+                placeholder="+92 300 0000000"
+              />
             </Field>
             <Field label="Level" error={errors.level}>
               <select name="level" defaultValue="" className={inputClass}>

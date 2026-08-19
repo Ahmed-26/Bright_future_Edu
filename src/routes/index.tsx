@@ -33,13 +33,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Meridian Academy | O Level, A Level & IGCSE Institute" },
+      { title: "Bright Future Group of Education | O Level, A Level & IGCSE Institute" },
       {
         name: "description",
         content:
           "Premium O Level, A Level and IGCSE preparation with experienced teachers, focused learning and proven academic results.",
       },
-      { property: "og:title", content: "Meridian Academy | O Level, A Level & IGCSE" },
+      {
+        property: "og:title",
+        content: "Bright Future Group of Education | O Level, A Level & IGCSE",
+      },
       {
         property: "og:description",
         content:
@@ -305,7 +308,7 @@ function HomePage() {
               Why choose us
             </p>
             <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-              Why families trust Meridian Academy
+              Why families trust Bright Future Group of Education
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               Experienced faculty, board-focused teaching and parent-friendly communication built

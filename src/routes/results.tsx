@@ -13,8 +13,11 @@ export const Route = createFileRoute("/results")({
         content:
           "Filter published academic results by year, level, subject and exam board. Demo records shown for design preview.",
       },
-      { property: "og:title", content: "Results | Meridian Academy" },
-      { property: "og:description", content: "Academic results by year, level, subject and exam board." },
+      { property: "og:title", content: "Results | Bright Future Group of Education" },
+      {
+        property: "og:description",
+        content: "Academic results by year, level, subject and exam board.",
+      },
     ],
   }),
   component: ResultsPage,
@@ -80,21 +83,28 @@ function ResultsPage() {
 
       <section className="mx-auto max-w-7xl px-5 py-16">
         <p className="rounded-xl border border-accent/40 bg-accent/10 px-5 py-4 text-sm text-foreground">
-          <strong className="font-semibold">Demo data:</strong> the records on this page are placeholders for the
-          design preview and do not represent real students or grades.
+          <strong className="font-semibold">Demo data:</strong> the records on this page are
+          placeholders for the design preview and do not represent real students or grades.
         </p>
 
         <div className="mt-8 grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-card sm:grid-cols-2 lg:grid-cols-4">
           <Select label="Year" value={year} onChange={setYear} options={years.map(String)} />
           <Select label="Level" value={level} onChange={setLevel} options={[...levels]} />
-          <Select label="Subject" value={subject} onChange={setSubject} options={subjects.map((s) => s.name)} />
+          <Select
+            label="Subject"
+            value={subject}
+            onChange={setSubject}
+            options={subjects.map((s) => s.name)}
+          />
           <Select label="Exam board" value={board} onChange={setBoard} options={[...boards]} />
         </div>
 
         {filtered.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-dashed border-border bg-card px-6 py-20 text-center">
             <h2 className="text-xl font-semibold">No results for this combination</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Adjust the filters to see other series.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Adjust the filters to see other series.
+            </p>
           </div>
         ) : (
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

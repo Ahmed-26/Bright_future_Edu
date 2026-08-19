@@ -12,8 +12,11 @@ export const Route = createFileRoute("/teachers")({
         content:
           "Meet the subject heads and senior faculty teaching Cambridge and Edexcel programmes at the academy.",
       },
-      { property: "og:title", content: "Our Faculty | Meridian Academy" },
-      { property: "og:description", content: "Subject heads with a decade or more of board-level teaching." },
+      { property: "og:title", content: "Our Faculty | Bright Future Group of Education" },
+      {
+        property: "og:description",
+        content: "Subject heads with a decade or more of board-level teaching.",
+      },
     ],
   }),
   component: TeachersPage,
@@ -44,7 +47,9 @@ function TeachersPage() {
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent">
                     {t.designation}
                   </p>
-                  <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">{t.bio}</p>
+                  <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {t.bio}
+                  </p>
                   <dl className="mt-5 space-y-2 border-t border-border pt-5 text-xs text-muted-foreground">
                     <div className="flex justify-between gap-3">
                       <dt>Qualification</dt>
@@ -68,7 +73,8 @@ function TeachersPage() {
         <div className="mt-16 rounded-2xl border border-border bg-card px-8 py-12 text-center shadow-card">
           <h2 className="text-2xl font-semibold">Want to teach with us?</h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
-            We hire subject specialists who can prove results. Send your profile and we will arrange a demo class.
+            We hire subject specialists who can prove results. Send your profile and we will arrange
+            a demo class.
           </p>
           <Link
             to="/contact"
