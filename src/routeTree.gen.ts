@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AchievementsRouteImport } from './routes/achievements'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CoursesRouteImport } from './routes/courses'
@@ -20,6 +21,22 @@ import { Route as ResultsRouteImport } from './routes/results'
 import { Route as SubjectsRouteImport } from './routes/subjects'
 import { Route as TeachersRouteImport } from './routes/teachers'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAchievementsRouteImport } from './routes/admin.achievements'
+import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
+import { Route as AdminEnrollmentsRouteImport } from './routes/admin.enrollments'
+import { Route as AdminExamBoardsRouteImport } from './routes/admin.exam-boards'
+import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
+import { Route as AdminMediaRouteImport } from './routes/admin.media'
+import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
+import { Route as AdminResultsRouteImport } from './routes/admin.results'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminStatisticsRouteImport } from './routes/admin.statistics'
+import { Route as AdminSubjectsRouteImport } from './routes/admin.subjects'
+import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
+import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
+import { Route as AdminTimelineRouteImport } from './routes/admin.timeline'
+import { Route as AdminWhyChooseUsRouteImport } from './routes/admin.why-choose-us'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +52,11 @@ const AboutRoute = AboutRouteImport.update({
 const AchievementsRoute = AchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdmissionsRoute = AdmissionsRouteImport.update({
@@ -77,6 +99,86 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAchievementsRoute = AdminAchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCoursesRoute = AdminCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEnrollmentsRoute = AdminEnrollmentsRouteImport.update({
+  id: '/enrollments',
+  path: '/enrollments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExamBoardsRoute = AdminExamBoardsRouteImport.update({
+  id: '/exam-boards',
+  path: '/exam-boards',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHomepageRoute = AdminHomepageRouteImport.update({
+  id: '/homepage',
+  path: '/homepage',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMessagesRoute = AdminMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminResultsRoute = AdminResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStatisticsRoute = AdminStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubjectsRoute = AdminSubjectsRouteImport.update({
+  id: '/subjects',
+  path: '/subjects',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTeachersRoute = AdminTeachersRouteImport.update({
+  id: '/teachers',
+  path: '/teachers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTimelineRoute = AdminTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWhyChooseUsRoute = AdminWhyChooseUsRouteImport.update({
+  id: '/why-choose-us',
+  path: '/why-choose-us',
+  getParentRoute: () => AdminRoute,
+} as any)
 const CoursesSlugRoute = CoursesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -87,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/achievements': typeof AchievementsRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admissions': typeof AdmissionsRoute
   '/contact': typeof ContactRoute
   '/courses': typeof CoursesRouteWithChildren
@@ -95,7 +198,23 @@ export interface FileRoutesByFullPath {
   '/subjects': typeof SubjectsRoute
   '/teachers': typeof TeachersRoute
   '/terms': typeof TermsRoute
+  '/admin/achievements': typeof AdminAchievementsRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-boards': typeof AdminExamBoardsRoute
+  '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/messages': typeof AdminMessagesRoute
+  '/admin/results': typeof AdminResultsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/statistics': typeof AdminStatisticsRoute
+  '/admin/subjects': typeof AdminSubjectsRoute
+  '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/admin/timeline': typeof AdminTimelineRoute
+  '/admin/why-choose-us': typeof AdminWhyChooseUsRoute
   '/courses/$slug': typeof CoursesSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,13 +228,30 @@ export interface FileRoutesByTo {
   '/subjects': typeof SubjectsRoute
   '/teachers': typeof TeachersRoute
   '/terms': typeof TermsRoute
+  '/admin/achievements': typeof AdminAchievementsRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-boards': typeof AdminExamBoardsRoute
+  '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/messages': typeof AdminMessagesRoute
+  '/admin/results': typeof AdminResultsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/statistics': typeof AdminStatisticsRoute
+  '/admin/subjects': typeof AdminSubjectsRoute
+  '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/admin/timeline': typeof AdminTimelineRoute
+  '/admin/why-choose-us': typeof AdminWhyChooseUsRoute
   '/courses/$slug': typeof CoursesSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/achievements': typeof AchievementsRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admissions': typeof AdmissionsRoute
   '/contact': typeof ContactRoute
   '/courses': typeof CoursesRouteWithChildren
@@ -124,7 +260,23 @@ export interface FileRoutesById {
   '/subjects': typeof SubjectsRoute
   '/teachers': typeof TeachersRoute
   '/terms': typeof TermsRoute
+  '/admin/achievements': typeof AdminAchievementsRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-boards': typeof AdminExamBoardsRoute
+  '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/messages': typeof AdminMessagesRoute
+  '/admin/results': typeof AdminResultsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/statistics': typeof AdminStatisticsRoute
+  '/admin/subjects': typeof AdminSubjectsRoute
+  '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/admin/timeline': typeof AdminTimelineRoute
+  '/admin/why-choose-us': typeof AdminWhyChooseUsRoute
   '/courses/$slug': typeof CoursesSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +284,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/achievements'
+    | '/admin'
     | '/admissions'
     | '/contact'
     | '/courses'
@@ -140,7 +293,23 @@ export interface FileRouteTypes {
     | '/subjects'
     | '/teachers'
     | '/terms'
+    | '/admin/achievements'
+    | '/admin/courses'
+    | '/admin/enrollments'
+    | '/admin/exam-boards'
+    | '/admin/homepage'
+    | '/admin/media'
+    | '/admin/messages'
+    | '/admin/results'
+    | '/admin/settings'
+    | '/admin/statistics'
+    | '/admin/subjects'
+    | '/admin/teachers'
+    | '/admin/testimonials'
+    | '/admin/timeline'
+    | '/admin/why-choose-us'
     | '/courses/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,12 +323,29 @@ export interface FileRouteTypes {
     | '/subjects'
     | '/teachers'
     | '/terms'
+    | '/admin/achievements'
+    | '/admin/courses'
+    | '/admin/enrollments'
+    | '/admin/exam-boards'
+    | '/admin/homepage'
+    | '/admin/media'
+    | '/admin/messages'
+    | '/admin/results'
+    | '/admin/settings'
+    | '/admin/statistics'
+    | '/admin/subjects'
+    | '/admin/teachers'
+    | '/admin/testimonials'
+    | '/admin/timeline'
+    | '/admin/why-choose-us'
     | '/courses/$slug'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/achievements'
+    | '/admin'
     | '/admissions'
     | '/contact'
     | '/courses'
@@ -168,13 +354,30 @@ export interface FileRouteTypes {
     | '/subjects'
     | '/teachers'
     | '/terms'
+    | '/admin/achievements'
+    | '/admin/courses'
+    | '/admin/enrollments'
+    | '/admin/exam-boards'
+    | '/admin/homepage'
+    | '/admin/media'
+    | '/admin/messages'
+    | '/admin/results'
+    | '/admin/settings'
+    | '/admin/statistics'
+    | '/admin/subjects'
+    | '/admin/teachers'
+    | '/admin/testimonials'
+    | '/admin/timeline'
+    | '/admin/why-choose-us'
     | '/courses/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AchievementsRoute: typeof AchievementsRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AdmissionsRoute: typeof AdmissionsRoute
   ContactRoute: typeof ContactRoute
   CoursesRoute: typeof CoursesRouteWithChildren
@@ -206,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/achievements'
       fullPath: '/achievements'
       preLoaderRoute: typeof AchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admissions': {
@@ -264,6 +474,118 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/achievements': {
+      id: '/admin/achievements'
+      path: '/achievements'
+      fullPath: '/admin/achievements'
+      preLoaderRoute: typeof AdminAchievementsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/courses': {
+      id: '/admin/courses'
+      path: '/courses'
+      fullPath: '/admin/courses'
+      preLoaderRoute: typeof AdminCoursesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/enrollments': {
+      id: '/admin/enrollments'
+      path: '/enrollments'
+      fullPath: '/admin/enrollments'
+      preLoaderRoute: typeof AdminEnrollmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/exam-boards': {
+      id: '/admin/exam-boards'
+      path: '/exam-boards'
+      fullPath: '/admin/exam-boards'
+      preLoaderRoute: typeof AdminExamBoardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/homepage': {
+      id: '/admin/homepage'
+      path: '/homepage'
+      fullPath: '/admin/homepage'
+      preLoaderRoute: typeof AdminHomepageRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/messages': {
+      id: '/admin/messages'
+      path: '/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AdminMessagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/results': {
+      id: '/admin/results'
+      path: '/results'
+      fullPath: '/admin/results'
+      preLoaderRoute: typeof AdminResultsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/statistics': {
+      id: '/admin/statistics'
+      path: '/statistics'
+      fullPath: '/admin/statistics'
+      preLoaderRoute: typeof AdminStatisticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subjects': {
+      id: '/admin/subjects'
+      path: '/subjects'
+      fullPath: '/admin/subjects'
+      preLoaderRoute: typeof AdminSubjectsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/teachers': {
+      id: '/admin/teachers'
+      path: '/teachers'
+      fullPath: '/admin/teachers'
+      preLoaderRoute: typeof AdminTeachersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/testimonials': {
+      id: '/admin/testimonials'
+      path: '/testimonials'
+      fullPath: '/admin/testimonials'
+      preLoaderRoute: typeof AdminTestimonialsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/timeline': {
+      id: '/admin/timeline'
+      path: '/timeline'
+      fullPath: '/admin/timeline'
+      preLoaderRoute: typeof AdminTimelineRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/why-choose-us': {
+      id: '/admin/why-choose-us'
+      path: '/why-choose-us'
+      fullPath: '/admin/why-choose-us'
+      preLoaderRoute: typeof AdminWhyChooseUsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/courses/$slug': {
       id: '/courses/$slug'
       path: '/$slug'
@@ -273,6 +595,46 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminAchievementsRoute: typeof AdminAchievementsRoute
+  AdminCoursesRoute: typeof AdminCoursesRoute
+  AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
+  AdminExamBoardsRoute: typeof AdminExamBoardsRoute
+  AdminHomepageRoute: typeof AdminHomepageRoute
+  AdminMediaRoute: typeof AdminMediaRoute
+  AdminMessagesRoute: typeof AdminMessagesRoute
+  AdminResultsRoute: typeof AdminResultsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminStatisticsRoute: typeof AdminStatisticsRoute
+  AdminSubjectsRoute: typeof AdminSubjectsRoute
+  AdminTeachersRoute: typeof AdminTeachersRoute
+  AdminTestimonialsRoute: typeof AdminTestimonialsRoute
+  AdminTimelineRoute: typeof AdminTimelineRoute
+  AdminWhyChooseUsRoute: typeof AdminWhyChooseUsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAchievementsRoute: AdminAchievementsRoute,
+  AdminCoursesRoute: AdminCoursesRoute,
+  AdminEnrollmentsRoute: AdminEnrollmentsRoute,
+  AdminExamBoardsRoute: AdminExamBoardsRoute,
+  AdminHomepageRoute: AdminHomepageRoute,
+  AdminMediaRoute: AdminMediaRoute,
+  AdminMessagesRoute: AdminMessagesRoute,
+  AdminResultsRoute: AdminResultsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminStatisticsRoute: AdminStatisticsRoute,
+  AdminSubjectsRoute: AdminSubjectsRoute,
+  AdminTeachersRoute: AdminTeachersRoute,
+  AdminTestimonialsRoute: AdminTestimonialsRoute,
+  AdminTimelineRoute: AdminTimelineRoute,
+  AdminWhyChooseUsRoute: AdminWhyChooseUsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CoursesRouteChildren {
   CoursesSlugRoute: typeof CoursesSlugRoute
@@ -289,6 +651,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AchievementsRoute: AchievementsRoute,
+  AdminRoute: AdminRouteWithChildren,
   AdmissionsRoute: AdmissionsRoute,
   ContactRoute: ContactRoute,
   CoursesRoute: CoursesRouteWithChildren,
