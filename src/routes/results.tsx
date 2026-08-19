@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, levels, results, subjects } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 
 export const Route = createFileRoute("/results")({
   head: () => ({
@@ -22,8 +22,6 @@ export const Route = createFileRoute("/results")({
   }),
   component: ResultsPage,
 });
-
-const years = Array.from(new Set(results.map((r) => r.year))).sort((a, b) => b - a);
 
 function Select({
   label,
@@ -56,6 +54,8 @@ function Select({
 }
 
 function ResultsPage() {
+  const { results, subjects, levels, boards } = RootRoute.useLoaderData();
+  const years = Array.from(new Set(results.map((r) => r.year))).sort((a, b) => b - a);
   const [year, setYear] = useState("All");
   const [level, setLevel] = useState("All");
   const [subject, setSubject] = useState("All");
@@ -70,7 +70,7 @@ function ResultsPage() {
           (subject === "All" || r.subject === subject) &&
           (board === "All" || r.board === board),
       ),
-    [year, level, subject, board],
+    [year, level, subject, board, results],
   );
 
   return (

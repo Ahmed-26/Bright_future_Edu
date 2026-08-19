@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
-import { site } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
+import { useServerFn } from "@tanstack/react-start";
+import { submitContactFn } from "@/server/fns";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -34,9 +36,12 @@ const inputClass =
   "w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring";
 
 function ContactPage() {
+  const { settings } = RootRoute.useLoaderData();
+  const site = settings;
+  const submit = useServerFn(submitContactFn);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const parsed = schema.safeParse(Object.fromEntries(new FormData(e.currentTarget)));
     if (!parsed.success) {
@@ -47,6 +52,15 @@ function ContactPage() {
       return;
     }
     setErrors({});
+    await submit({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        phone: parsed.data.phone ?? "",
+        subject: parsed.data.subject,
+        message: parsed.data.message,
+      },
+    });
     e.currentTarget.reset();
     toast.success("Message sent — we usually reply within one working day.");
   };
@@ -87,9 +101,18 @@ function ContactPage() {
             ))}
 
             <div className="overflow-hidden rounded-2xl border border-border shadow-card">
-              <div className="grid h-56 place-items-center bg-surface text-sm text-muted-foreground">
-                Google Maps embed placeholder
-              </div>
+              {site.mapsUrl ? (
+                <iframe
+                  title="Campus map"
+                  src={site.mapsUrl}
+                  className="h-56 w-full border-0"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="grid h-56 place-items-center bg-surface text-sm text-muted-foreground">
+                  Google Maps embed placeholder
+                </div>
+              )}
             </div>
           </div>
 

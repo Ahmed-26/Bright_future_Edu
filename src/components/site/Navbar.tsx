@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
+import type { SiteSettings } from "@/lib/cms-types";
 
 const links = [
   { to: "/", label: "Home" },
@@ -15,7 +16,7 @@ const links = [
   { to: "/contact", label: "Contact" },
 ];
 
-export function Navbar() {
+export function Navbar({ settings }: { settings: SiteSettings }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -37,7 +38,11 @@ export function Navbar() {
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5">
         <Link to="/" onClick={() => setOpen(false)} aria-label={"Home"}>
-          <Logo className="scale-[0.78] origin-left sm:scale-90 lg:scale-95" />
+          <Logo
+            className="origin-left scale-[0.78] sm:scale-90 lg:scale-95"
+            src={settings.logo}
+            name={settings.name}
+          />
         </Link>
 
         <ul className="hidden items-center gap-1 lg:flex">

@@ -4,11 +4,13 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { getPublicCatalog } from "@/server/fns";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -77,6 +79,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staleTime: 0,
+  loader: () => getPublicCatalog(),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -132,6 +136,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const catalog = Route.useLoaderData();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname.startsWith("/admin");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -152,28 +159,30 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col">
-        <Navbar />
+        {!isAdmin && <Navbar settings={catalog.settings} />}
         <main className="flex-1">
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
         </main>
-        <Footer />
+        {!isAdmin && <Footer catalog={catalog} />}
       </div>
 
-      <button
-        type="button"
-        aria-label="Scroll to top"
-        onClick={scrollToTop}
-        className={[
-          "fixed bottom-6 right-6 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-all duration-300 hover:scale-105 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          showScrollTop
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none translate-y-3 opacity-0",
-        ].join(" ")}
-        style={{ width: 48, height: 48 }}
-      >
-        <ArrowUp className="h-5 w-5" />
-      </button>
+      {!isAdmin && (
+        <button
+          type="button"
+          aria-label="Scroll to top"
+          onClick={scrollToTop}
+          className={[
+            "fixed bottom-6 right-6 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-all duration-300 hover:scale-105 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            showScrollTop
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-3 opacity-0",
+          ].join(" ")}
+          style={{ width: 48, height: 48 }}
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
+      )}
 
       <Toaster />
     </QueryClientProvider>

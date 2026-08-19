@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, courses, levels, subjects } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
+import { useServerFn } from "@tanstack/react-start";
+import { submitEnrollmentFn } from "@/server/fns";
 
 export const Route = createFileRoute("/admissions")({
   head: () => ({
@@ -80,10 +82,12 @@ function Field({
 }
 
 function AdmissionsPage() {
+  const { subjects, courses, levels, boards } = RootRoute.useLoaderData();
+  const submit = useServerFn(submitEnrollmentFn);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
     const parsed = schema.safeParse(data);
@@ -95,6 +99,19 @@ function AdmissionsPage() {
       return;
     }
     setErrors({});
+    await submit({
+      data: {
+        student: parsed.data.student,
+        guardian: parsed.data.guardian,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        level: parsed.data.level,
+        board: parsed.data.board,
+        subject: parsed.data.subject,
+        course: parsed.data.course ?? "",
+        message: parsed.data.message ?? "",
+      },
+    });
     setSubmitted(true);
     e.currentTarget.reset();
     toast.success("Enquiry received — our admissions team will call you shortly.");
@@ -166,8 +183,7 @@ function AdmissionsPage() {
         <div className="mt-16 rounded-2xl border border-border bg-card p-8 shadow-elegant md:p-10">
           <h2 className="text-2xl font-semibold">Enrollment form</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Submissions are validated in the browser for this preview; they will be stored once the
-            backend is connected.
+            Submissions are stored in the database and appear in the admin admissions list.
           </p>
 
           {submitted && (

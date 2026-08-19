@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { subjects } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 
 export const Route = createFileRoute("/subjects")({
   head: () => ({
@@ -49,6 +49,7 @@ const icons: Record<string, typeof Atom> = {
 };
 
 function SubjectsPage() {
+  const { subjects } = RootRoute.useLoaderData();
   return (
     <>
       <PageHeader

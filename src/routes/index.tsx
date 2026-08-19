@@ -18,17 +18,7 @@ import campus from "@/assets/hero-students.jpg";
 import { Counter } from "@/components/site/Counter";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
-import {
-  achievements,
-  courses,
-  examBoards,
-  results,
-  subjects,
-  teachers,
-  testimonials,
-  whyChooseUs,
-  stats,
-} from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -53,19 +43,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const popularCourses = courses.filter((course) => course.featured).slice(0, 6);
-const popularSubjects = subjects.slice(0, 8);
-const featuredTeachers = teachers.slice(0, 4);
-const featuredResults = results.filter((result) => result.grade.includes("A")).slice(0, 6);
-const featuredAchievements = achievements.slice(0, 4);
-const testimonialsPreview = testimonials.slice(0, 4);
-
-const heroBullets = [
-  "Cambridge & Edexcel pathways",
-  "Small groups with focused feedback",
-  "Past-paper driven preparation",
-];
-
 const featureIcons = [
   Users,
   ShieldCheck,
@@ -78,6 +55,28 @@ const featureIcons = [
 ];
 
 function HomePage() {
+  const catalog = RootRoute.useLoaderData();
+  const {
+    homepage,
+    stats,
+    examBoards,
+    subjects,
+    teachers,
+    courses,
+    results,
+    achievements,
+    testimonials,
+    whyChooseUs,
+  } = catalog;
+  const popularCourses = courses.filter((course) => course.featured).slice(0, 6);
+  const popularSubjects = subjects.filter((subject) => subject.featured).slice(0, 8);
+  const featuredTeachers = teachers.filter((teacher) => teacher.featured).slice(0, 4);
+  const featuredResults = results.filter((result) => result.featured).slice(0, 6);
+  const featuredAchievements = achievements.filter((item) => item.featured).slice(0, 4);
+  const testimonialsPreview = testimonials.filter((item) => item.featured).slice(0, 4);
+  const heroBullets = homepage.heroBullets;
+  const heroImage = homepage.heroImage || campus;
+
   return (
     <div className="overflow-hidden">
       <section className="relative bg-hero text-primary-foreground">
@@ -91,14 +90,13 @@ function HomePage() {
           <Reveal className="relative z-10 max-w-2xl">
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/80 backdrop-blur-md">
               <GraduationCap className="size-4 text-accent" />
-              Premium O Level, A Level & IGCSE Institute
+              {homepage.heroEyebrow}
             </p>
             <h1 className="mt-6 text-5xl font-semibold leading-[0.98] text-balance md:text-6xl lg:text-7xl">
-              Achieve More. Learn Better. Succeed Further.
+              {homepage.heroHeading}
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/78 md:text-xl">
-              Premium O Level, A Level & IGCSE preparation with experienced teachers, focused
-              learning and proven academic results.
+              {homepage.heroDescription}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -114,18 +112,18 @@ function HomePage() {
             </div>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/courses"
+              <a
+                href={homepage.heroPrimaryHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--gradient-gold)] px-6 py-3.5 text-sm font-semibold text-accent-foreground shadow-elegant transition-transform duration-200 hover:-translate-y-0.5"
               >
-                Explore Courses <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                to="/admissions"
+                {homepage.heroPrimaryLabel} <ArrowRight className="size-4" />
+              </a>
+              <a
+                href={homepage.heroSecondaryHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-white/8 px-6 py-3.5 text-sm font-semibold text-primary-foreground backdrop-blur-md transition-colors hover:bg-white/14"
               >
-                Enroll Now <ChevronRight className="size-4" />
-              </Link>
+                {homepage.heroSecondaryLabel} <ChevronRight className="size-4" />
+              </a>
             </div>
 
             <dl className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -155,7 +153,7 @@ function HomePage() {
 
             <div className="relative overflow-hidden rounded-[2rem] border border-white/14 bg-white/8 p-4 shadow-elegant backdrop-blur-xl">
               <img
-                src={campus}
+                src={heroImage}
                 alt="Students studying together at the academy"
                 loading="eager"
                 width={1280}
@@ -169,7 +167,7 @@ function HomePage() {
                       Academic focus
                     </p>
                     <p className="mt-1 font-display text-xl font-semibold text-primary-foreground">
-                      Board-ready learning for every student
+                      {homepage.heroCaption}
                     </p>
                   </div>
                   <div className="grid size-14 place-items-center rounded-2xl bg-[image:var(--gradient-gold)] text-accent-foreground shadow-card">
@@ -307,12 +305,9 @@ function HomePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">
               Why choose us
             </p>
-            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-              Why families trust Bright Future Group of Education
-            </h2>
+            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">{homepage.whyTitle}</h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Experienced faculty, board-focused teaching and parent-friendly communication built
-              around measurable improvement.
+              {homepage.whyDescription}
             </p>
           </div>
 
@@ -349,8 +344,12 @@ function HomePage() {
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                 <div className="relative grid h-48 place-items-center bg-[image:var(--gradient-primary)]">
                   <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_70%_20%,white,transparent_45%)]" />
-                  <span className="relative grid size-20 place-items-center rounded-full glass-panel font-display text-2xl font-semibold text-primary-foreground">
-                    {teacher.initials}
+                  <span className="relative grid size-20 place-items-center overflow-hidden rounded-full glass-panel font-display text-2xl font-semibold text-primary-foreground">
+                    {teacher.image ? (
+                      <img src={teacher.image} alt="" className="size-full object-cover" />
+                    ) : (
+                      teacher.initials
+                    )}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-6">
@@ -541,27 +540,25 @@ function HomePage() {
           <div className="absolute inset-0 opacity-35 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_32%),radial-gradient(circle_at_85%_25%,rgba(255,255,255,0.2),transparent_28%)]" />
           <div className="relative mx-auto max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
-              Final enrollment
+              {homepage.ctaEyebrow}
             </p>
-            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-              Ready to Achieve Your Academic Goals?
-            </h2>
+            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">{homepage.ctaHeading}</h2>
             <p className="mt-4 text-base leading-relaxed text-primary-foreground/72">
-              Join our expert-led O Level, A Level & IGCSE preparation programs.
+              {homepage.ctaDescription}
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link
-                to="/courses"
+              <a
+                href={homepage.ctaPrimaryHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--gradient-gold)] px-6 py-3.5 text-sm font-semibold text-accent-foreground shadow-elegant transition-transform hover:-translate-y-0.5"
               >
-                Explore Courses <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                to="/admissions"
+                {homepage.ctaPrimaryLabel} <ArrowRight className="size-4" />
+              </a>
+              <a
+                href={homepage.ctaSecondaryHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-white/8 px-6 py-3.5 text-sm font-semibold text-primary-foreground backdrop-blur-md transition-colors hover:bg-white/14"
               >
-                Enroll Now <ChevronRight className="size-4" />
-              </Link>
+                {homepage.ctaSecondaryLabel} <ChevronRight className="size-4" />
+              </a>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Award } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { achievements } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/achievements")({
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/achievements")({
   component: AchievementsPage,
 });
 
-const categories = ["All", ...Array.from(new Set(achievements.map((a) => a.category)))];
-
 function AchievementsPage() {
+  const { achievements } = RootRoute.useLoaderData();
+  const categories = ["All", ...Array.from(new Set(achievements.map((a) => a.category)))];
   const [category, setCategory] = useState("All");
   const list = achievements.filter((a) => category === "All" || a.category === category);
 

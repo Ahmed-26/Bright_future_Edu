@@ -1,14 +1,22 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { BookOpen, CalendarDays, CheckCircle2, Clock, GraduationCap, Landmark, UserRound, Wallet } from "lucide-react";
-import { courses } from "@/data/institute";
+import { getPublicCatalog } from "@/server/fns";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
 
 export const Route = createFileRoute("/courses/$slug")({
-  loader: ({ params }) => {
-    const course = courses.find((c) => c.slug === params.slug);
+  loader: async ({ params }) => {
+    const catalog = await getPublicCatalog();
+    const course = catalog.courses.find((c) => c.slug === params.slug);
     if (!course) throw notFound();
-    return { course };
+    const related = catalog.courses
+      .filter(
+        (c) =>
+          c.slug !== course.slug &&
+          (c.subjectSlug === course.subjectSlug || c.level === course.level),
+      )
+      .slice(0, 3);
+    return { course, related };
   },
   head: ({ loaderData }) => {
     const c = loaderData?.course;
@@ -27,10 +35,7 @@ export const Route = createFileRoute("/courses/$slug")({
 });
 
 function CourseDetails() {
-  const { course } = Route.useLoaderData();
-  const related = courses
-    .filter((c) => c.slug !== course.slug && (c.subjectSlug === course.subjectSlug || c.level === course.level))
-    .slice(0, 3);
+  const { course, related } = Route.useLoaderData();
 
   const facts = [
     { Icon: GraduationCap, label: "Level", value: course.level },

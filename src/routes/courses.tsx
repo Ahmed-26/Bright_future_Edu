@@ -4,7 +4,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, courses, levels, subjects } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/courses")({
@@ -54,6 +54,7 @@ function Chip({
 }
 
 function CoursesPage() {
+  const { courses, subjects, levels, boards } = RootRoute.useLoaderData();
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("All");
   const [board, setBoard] = useState("All");

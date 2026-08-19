@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
 import { Logo } from "./Logo";
-import { site, subjects } from "@/data/institute";
+import type { PublicCatalog } from "@/lib/cms-types";
 
 const pages = [
   { to: "/courses", label: "Courses" },
@@ -12,15 +12,16 @@ const pages = [
   { to: "/admissions", label: "Admissions" },
 ];
 
-export function Footer() {
+export function Footer({ catalog }: { catalog: PublicCatalog }) {
+  const site = catalog.settings;
+  const subjects = catalog.subjects;
   return (
     <footer className="mt-24 bg-hero text-primary-foreground">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Logo inverted showText={false} />
+          <Logo inverted showText={false} src={site.logo} name={site.name} />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-primary-foreground/70">
-            Premium Cambridge O Level, A Level and IGCSE preparation built around experienced
-            faculty, small groups and relentless past-paper practice.
+            {site.footerText}
           </p>
           <div className="mt-6 flex gap-3">
             {[
@@ -90,7 +91,7 @@ export function Footer() {
       <div className="border-t border-primary-foreground/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-6 text-xs text-primary-foreground/55 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {site.name}. Demo content for design preview.
+            © {new Date().getFullYear()} {site.name}
           </p>
           <div className="flex gap-6">
             <Link to="/privacy" className="hover:text-accent">

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { teachers } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 
 export const Route = createFileRoute("/teachers")({
   head: () => ({
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/teachers")({
 });
 
 function TeachersPage() {
+  const { teachers } = RootRoute.useLoaderData();
   return (
     <>
       <PageHeader
@@ -38,8 +39,12 @@ function TeachersPage() {
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                 <div className="relative grid h-44 place-items-center bg-[image:var(--gradient-primary)]">
                   <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_70%_20%,white,transparent_50%)]" />
-                  <span className="relative grid size-20 place-items-center rounded-full glass-panel font-display text-2xl font-semibold text-primary-foreground">
-                    {t.initials}
+                  <span className="relative grid size-20 place-items-center overflow-hidden rounded-full glass-panel font-display text-2xl font-semibold text-primary-foreground">
+                    {t.image ? (
+                      <img src={t.image} alt="" className="size-full object-cover" />
+                    ) : (
+                      t.initials
+                    )}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-6">

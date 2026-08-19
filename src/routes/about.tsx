@@ -3,7 +3,7 @@ import { Compass, Eye, HeartHandshake, Target } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
 import { Counter } from "@/components/site/Counter";
-import { stats, timeline, whyChooseUs } from "@/data/institute";
+import { Route as RootRoute } from "@/routes/__root";
 import campus from "@/assets/hero-students.jpg";
 
 export const Route = createFileRoute("/about")({
@@ -49,6 +49,7 @@ const pillars = [
 ];
 
 function AboutPage() {
+  const { stats, timeline, whyChooseUs } = RootRoute.useLoaderData();
   return (
     <>
       <PageHeader

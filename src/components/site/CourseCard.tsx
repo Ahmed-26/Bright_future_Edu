@@ -1,12 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Clock, UserRound } from "lucide-react";
-import type { Course } from "@/data/institute";
+import type { CourseRecord } from "@/lib/cms-types";
 
-export function CourseCard({ course }: { course: Course }) {
+export function CourseCard({ course }: { course: CourseRecord }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
       <div className="relative h-32 overflow-hidden bg-[image:var(--gradient-primary)]">
-        <div className="absolute inset-0 opacity-25 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_45%)]" />
+        {course.image ? (
+          <img src={course.image} alt="" className="absolute inset-0 size-full object-cover opacity-80" />
+        ) : (
+          <div className="absolute inset-0 opacity-25 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_45%)]" />
+        )}
         <div className="relative flex h-full items-end justify-between p-5">
           <span className="rounded-full bg-[image:var(--gradient-gold)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent-foreground">
             {course.level}
