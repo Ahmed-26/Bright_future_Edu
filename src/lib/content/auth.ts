@@ -49,6 +49,15 @@ export function authIsHardened(): boolean {
   return env("ADMIN_PASSCODE") !== undefined && env("SESSION_SECRET") !== undefined;
 }
 
+/**
+ * `secure` is on everywhere except a local development server, where the app is
+ * served over plain http and a Secure cookie would be dropped by some browsers.
+ * Any non-development build keeps it on, so a deploy is always https-only.
+ */
+function secureCookie(): boolean {
+  return env("NODE_ENV") !== "development";
+}
+
 function session() {
   return useSession<AdminSessionData>({
     name: SESSION_NAME,
@@ -57,11 +66,12 @@ function session() {
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: true,
+      secure: secureCookie(),
       path: "/",
     },
   });
 }
+
 
 /**
  * Length-independent comparison to avoid leaking the passcode length or a

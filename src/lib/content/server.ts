@@ -11,6 +11,10 @@
  *
  * Every mutation is authorised on the server. A client that calls an admin
  * function without a session gets a 401 regardless of what the UI shows.
+ *
+ * `getRepository()` is awaited rather than called synchronously because the SQL
+ * driver verifies (and creates) its schema on first use. Resolution is memoised
+ * per process, so only the first call pays for it.
  */
 
 import { createServerFn } from "@tanstack/react-start";
@@ -30,7 +34,7 @@ import type {
 
 import { authIsHardened, isAdmin, requireAdmin, signInWithPasscode, signOutAdmin } from "./auth";
 import type { ContentSnapshot } from "./repository";
-import { repository } from "./repository";
+import { getRepository } from "./repository";
 import type { SiteContent } from "./schema";
 import { COLLECTION_KEYS, publicCollections } from "./schema";
 
@@ -57,7 +61,8 @@ const longText = z.string().trim().max(4000);
  */
 export const fetchPublicContent = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteContent> => {
-    const content = await repository().readContent();
+    const repo = await getRepository();
+    const content = await repo.readContent();
     return { ...content, collections: publicCollections(content.collections) };
   },
 );
@@ -70,7 +75,7 @@ export type AdminSessionInfo = {
   signedIn: boolean;
   /** False while ADMIN_PASSCODE / SESSION_SECRET are unset. */
   hardened: boolean;
-  /** "memory" until a database driver is configured. */
+  /** "memory" until DATABASE_URL points at a reachable database. */
   driver: "memory" | "sql";
 };
 
@@ -78,7 +83,7 @@ export const fetchAdminSession = createServerFn({ method: "GET" }).handler(
   async (): Promise<AdminSessionInfo> => ({
     signedIn: await isAdmin(),
     hardened: authIsHardened(),
-    driver: repository().driver,
+    driver: (await getRepository()).driver,
   }),
 );
 
@@ -99,7 +104,8 @@ export const adminSignOut = createServerFn({ method: "POST" }).handler(async () 
 export const fetchAdminSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<ContentSnapshot> => {
     await requireAdmin();
-    return repository().readAll();
+    const repo = await getRepository();
+    return repo.readAll();
   },
 );
 
@@ -118,7 +124,7 @@ export const createRow = createServerFn({ method: "POST" })
   .inputValidator(z.object({ key: collectionKey, data: rowData }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const repo = repository();
+    const repo = await getRepository();
     const snapshot = await repo.readAll();
     const existing = snapshot.collections[data.key] as WithMeta<object>[];
     const row = {
@@ -139,7 +145,8 @@ export const updateRow = createServerFn({ method: "POST" })
     await requireAdmin();
     // id/order are structural: never let a client patch overwrite them.
     const { id: _ignoredId, order: _ignoredOrder, ...patch } = data.data;
-    await repository().updateRow(data.key, data.id, { ...patch, updatedAt: now() });
+    const repo = await getRepository();
+    await repo.updateRow(data.key, data.id, { ...patch, updatedAt: now() });
     return { ok: true };
   });
 
@@ -147,7 +154,8 @@ export const deleteRow = createServerFn({ method: "POST" })
   .inputValidator(z.object({ key: collectionKey, id }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().deleteRow(data.key, data.id);
+    const repo = await getRepository();
+    await repo.deleteRow(data.key, data.id);
     return { ok: true };
   });
 
@@ -162,7 +170,8 @@ export const setRowFlag = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().updateRow(data.key, data.id, {
+    const repo = await getRepository();
+    await repo.updateRow(data.key, data.id, {
       [data.flag]: data.value,
       updatedAt: now(),
     });
@@ -173,7 +182,7 @@ export const moveRow = createServerFn({ method: "POST" })
   .inputValidator(z.object({ key: collectionKey, id, direction: z.union([z.literal(-1), z.literal(1)]) }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const repo = repository();
+    const repo = await getRepository();
     const snapshot = await repo.readAll();
     const rows = [...(snapshot.collections[data.key] as WithMeta<object>[])].sort(
       (a, b) => a.order - b.order,
@@ -217,7 +226,8 @@ export const saveSettings = createServerFn({ method: "POST" })
   .inputValidator(settingsSchema)
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().saveSettings(data);
+    const repo = await getRepository();
+    await repo.saveSettings(data);
     return { ok: true };
   });
 
@@ -241,7 +251,8 @@ export const saveHomepage = createServerFn({ method: "POST" })
   .inputValidator(homepageSchema)
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().saveHomepage(data);
+    const repo = await getRepository();
+    await repo.saveHomepage(data);
     return { ok: true };
   });
 
@@ -259,7 +270,8 @@ export const saveSections = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().saveSections(data as HomepageSection[]);
+    const repo = await getRepository();
+    await repo.saveSections(data as HomepageSection[]);
     return { ok: true };
   });
 
@@ -295,7 +307,8 @@ export const submitEnrollment = createServerFn({ method: "POST" })
       submittedAt: now(),
       note: data.note ?? "",
     };
-    await repository().addEnrollment(row);
+    const repo = await getRepository();
+    await repo.addEnrollment(row);
     return { ok: true };
   });
 
@@ -319,7 +332,8 @@ export const submitMessage = createServerFn({ method: "POST" })
       read: false,
       submittedAt: now(),
     };
-    await repository().addMessage(row);
+    const repo = await getRepository();
+    await repo.addMessage(row);
     return { ok: true };
   });
 
@@ -333,7 +347,8 @@ export const setEnrollmentStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().updateEnrollment(data.id, { status: data.status });
+    const repo = await getRepository();
+    await repo.updateEnrollment(data.id, { status: data.status });
     return { ok: true };
   });
 
@@ -341,7 +356,8 @@ export const deleteEnrollment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().deleteEnrollment(data.id);
+    const repo = await getRepository();
+    await repo.deleteEnrollment(data.id);
     return { ok: true };
   });
 
@@ -349,7 +365,8 @@ export const setMessageRead = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id, read: z.boolean() }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().updateMessage(data.id, { read: data.read });
+    const repo = await getRepository();
+    await repo.updateMessage(data.id, { read: data.read });
     return { ok: true };
   });
 
@@ -357,7 +374,8 @@ export const deleteMessage = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().deleteMessage(data.id);
+    const repo = await getRepository();
+    await repo.deleteMessage(data.id);
     return { ok: true };
   });
 
@@ -376,7 +394,8 @@ export const addMedia = createServerFn({ method: "POST" })
       usage: data.usage,
       updatedAt: now(),
     };
-    await repository().addMedia(row);
+    const repo = await getRepository();
+    await repo.addMedia(row);
     return row;
   });
 
@@ -384,7 +403,8 @@ export const saveMediaUrl = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id, url: longText }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().updateMedia(data.id, { url: data.url, updatedAt: now() });
+    const repo = await getRepository();
+    await repo.updateMedia(data.id, { url: data.url, updatedAt: now() });
     return { ok: true };
   });
 
@@ -392,13 +412,15 @@ export const deleteMedia = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id }))
   .handler(async ({ data }) => {
     await requireAdmin();
-    await repository().deleteMedia(data.id);
+    const repo = await getRepository();
+    await repo.deleteMedia(data.id);
     return { ok: true };
   });
 
 /** Destructive: discards all edits and restores the checked-in seed content. */
 export const resetContent = createServerFn({ method: "POST" }).handler(async () => {
   await requireAdmin();
-  await repository().reset();
+  const repo = await getRepository();
+  await repo.reset();
   return { ok: true };
 });

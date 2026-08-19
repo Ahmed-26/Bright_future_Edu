@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, courses, levels, subjects } from "@/data/institute";
+import { boards as fallbackBoards, levels } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 import { submitEnrollment } from "@/lib/content/server";
+
 
 export const Route = createFileRoute("/admissions")({
   head: () => ({
@@ -81,9 +83,21 @@ function Field({
 }
 
 function AdmissionsPage() {
+  // Subjects, courses and boards are admin-managed, so the form options follow
+  // whatever is published rather than the static seed lists.
+  const subjects = useCollection("subjects");
+  const courses = useCollection("courses");
+  const examBoards = useCollection("examBoards");
+  const boards = useMemo(() => {
+    const published = examBoards.map((board) => board.name).filter(Boolean);
+    const names = published.length > 0 ? published : [...fallbackBoards];
+    return Array.from(new Set([...names, "Other"]));
+  }, [examBoards]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
+
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

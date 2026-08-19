@@ -1033,3 +1033,47 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Environment variables
+
+All three are read on the server only; none are exposed to the browser.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `ADMIN_PASSCODE` | for a live site | Passcode accepted by `/admin`. While unset, the admin panel stays open and shows a warning banner. |
+| `SESSION_SECRET` | for a live site | Signs the admin session cookie. Use a long random string; changing it signs everyone out. |
+| `DATABASE_URL` | optional | MySQL/MariaDB connection string. Without it the site runs on in-memory content. |
+
+Example:
+
+```sh
+ADMIN_PASSCODE="a-long-passcode"
+SESSION_SECRET="a-long-random-string"
+DATABASE_URL="mysql://user:password@host:3306/database"
+```
+
+## Content storage
+
+Everything the admin panel edits — courses, subjects, teachers, results,
+homepage copy, site settings, enrollments, messages, media — is stored on the
+server and read back by the public pages during SSR, so an edit is live for
+every visitor immediately.
+
+Two drivers, selected automatically:
+
+- **In-memory** (no `DATABASE_URL`): edits are shared by all visitors of that
+  server process but lost on restart. Fine for previewing; the admin panel says
+  so in a banner.
+- **MySQL / MariaDB** (`DATABASE_URL=mysql://...`): persistent. On first connect
+  the app creates its tables if missing and copies the seed content in, so a
+  blank database is ready without any manual step. If the database is
+  unreachable, the site falls back to in-memory rather than failing requests —
+  check the server log and the driver badge in the admin panel.
+
+`migrations/0002_init_mysql.sql` holds the same schema as standalone SQL for
+hosts where the database user cannot run `CREATE TABLE` at runtime (apply it via
+phpMyAdmin). `migrations/0001_init.sql` is the Postgres equivalent; the
+repository is dialect-aware, but no Postgres client is bundled yet.
+
+Note that Cloudflare Workers cannot open raw TCP connections to MySQL. Deploy to
+a Node host (or use a HTTP-based database driver) if you need persistence.
