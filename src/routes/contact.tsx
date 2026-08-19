@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { site } from "@/data/institute";
+import { submitMessage } from "@/lib/content/server";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -35,10 +36,14 @@ const inputClass =
 
 function ContactPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const parsed = schema.safeParse(Object.fromEntries(new FormData(e.currentTarget)));
+    const form = e.currentTarget;
+
+    // Fast feedback only — submitMessage re-validates the same shape server-side.
+    const parsed = schema.safeParse(Object.fromEntries(new FormData(form)));
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) next[String(issue.path[0])] = issue.message;
@@ -46,9 +51,30 @@ function ContactPage() {
       toast.error("Please correct the highlighted fields");
       return;
     }
+
     setErrors({});
-    e.currentTarget.reset();
-    toast.success("Message sent — we usually reply within one working day.");
+    setPending(true);
+    try {
+      const phone = parsed.data.phone?.trim();
+      await submitMessage({
+        data: {
+          name: parsed.data.name,
+          email: parsed.data.email,
+          subject: parsed.data.subject,
+          // The inbox row has no phone column, so append it to the body when given.
+          message: (phone ? `${parsed.data.message}\n\nPhone: ${phone}` : parsed.data.message).slice(
+            0,
+            4000,
+          ),
+        },
+      });
+      form.reset();
+      toast.success("Message sent — we usually reply within one working day.");
+    } catch {
+      toast.error("Could not send right now. Please call or email us instead.");
+    } finally {
+      setPending(false);
+    }
   };
 
   const details = [
@@ -142,16 +168,17 @@ function ContactPage() {
                 className={inputClass}
                 placeholder="How can we help?"
               />
-              {errors.message && (
-                <span className="mt-1.5 block text-xs text-destructive">{errors.message}</span>
+              {errors["message"] && (
+                <span className="mt-1.5 block text-xs text-destructive">{errors["message"]}</span>
               )}
             </label>
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="w-full rounded-xl bg-[image:var(--gradient-primary)] px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5 sm:w-auto"
+                disabled={pending}
+                className="w-full rounded-xl bg-[image:var(--gradient-primary)] px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
-                Send message
+                {pending ? "Sending…" : "Send message"}
               </button>
             </div>
           </form>

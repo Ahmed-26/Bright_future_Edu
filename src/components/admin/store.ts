@@ -1,32 +1,47 @@
 /**
- * PHASE 1 admin data store.
+ * Admin data store — now backed by the server, not the browser.
  *
- * Seeded from src/data/institute.ts so every admin screen is exercised against
- * the real content shape. State lives in a module-level snapshot exposed through
- * useSyncExternalStore, and is mirrored to localStorage so edits survive a reload
- * while the screens are being reviewed.
+ * Phase 1 kept the draft in localStorage. This module keeps the exact same
+ * exported surface (so no admin screen changed) but every read and write now
+ * goes through the server functions in src/lib/content/server.ts, which
+ * authorise the caller and persist through the repository.
  *
- * IMPORTANT: this is NOT a database. Nothing here is shared between browsers and
- * nothing reaches the public site. In phase 2 every function below is replaced by
- * a TanStack Start server function hitting a real database; the exported hook
- * signatures and the CrudApi contract stay identical so the screens don't change.
+ * How state flows:
+ *   1. SSR renders the seeded snapshot, so markup is stable and hydration-safe.
+ *   2. On mount the client fetches the real snapshot + session and replaces it.
+ *   3. Every mutation awaits the server, then refreshes the snapshot, so the UI
+ *      only ever shows state the server actually accepted.
+ *
+ * Nothing sensitive lives here: the passcode is compared on the server and the
+ * session is an httpOnly cookie the client cannot read.
  */
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import {
-  achievements as seedAchievements,
-  courses as seedCourses,
-  examBoards as seedExamBoards,
-  results as seedResults,
-  site as seedSite,
-  stats as seedStats,
-  subjects as seedSubjects,
-  teachers as seedTeachers,
-  testimonials as seedTestimonials,
-  timeline as seedTimeline,
-  whyChooseUs as seedWhyChooseUs,
-} from "@/data/institute";
+  addMedia as addMediaFn,
+  adminSignIn,
+  adminSignOut,
+  createRow,
+  deleteEnrollment as deleteEnrollmentFn,
+  deleteMedia as deleteMediaFn,
+  deleteMessage as deleteMessageFn,
+  deleteRow,
+  fetchAdminSession,
+  fetchAdminSnapshot,
+  moveRow,
+  resetContent,
+  saveHomepage as saveHomepageFn,
+  saveMediaUrl as saveMediaUrlFn,
+  saveSections,
+  saveSettings as saveSettingsFn,
+  setEnrollmentStatus as setEnrollmentStatusFn,
+  setMessageRead as setMessageReadFn,
+  setRowFlag,
+  updateRow,
+} from "@/lib/content/server";
+import { seedContent, seedMedia } from "@/lib/content/schema";
+import type { CollectionRowMap as SchemaRowMap } from "@/lib/content/schema";
 
 import type {
   CollectionKey,
@@ -41,38 +56,28 @@ import type {
   WithMeta,
 } from "./types";
 
-const STORAGE_KEY = "bfge.admin.draft.v1";
-
 /* ------------------------------------------------------------------ */
-/* Row shapes per collection                                          */
+/* Row shapes                                                         */
 /* ------------------------------------------------------------------ */
 
-export type CourseRow = (typeof seedCourses)[number];
-export type SubjectRow = (typeof seedSubjects)[number];
-export type TeacherRow = (typeof seedTeachers)[number];
-export type ExamBoardRow = (typeof seedExamBoards)[number];
-export type StatRow = (typeof seedStats)[number];
-export type ResultRow = (typeof seedResults)[number];
-export type AchievementRow = (typeof seedAchievements)[number];
-export type TestimonialRow = (typeof seedTestimonials)[number];
-export type WhyChooseUsRow = (typeof seedWhyChooseUs)[number];
-export type TimelineRow = (typeof seedTimeline)[number];
-
-export type CollectionRowMap = {
-  courses: CourseRow;
-  subjects: SubjectRow;
-  teachers: TeacherRow;
-  examBoards: ExamBoardRow;
-  statistics: StatRow;
-  results: ResultRow;
-  achievements: AchievementRow;
-  testimonials: TestimonialRow;
-  whyChooseUs: WhyChooseUsRow;
-  timeline: TimelineRow;
-};
+// Re-exported from the shared schema so the public site, the admin screens and
+// the database all describe rows with one set of types.
+export type {
+  AchievementRow,
+  CollectionRowMap,
+  CourseRow,
+  ExamBoardRow,
+  ResultRow,
+  StatRow,
+  SubjectRow,
+  TeacherRow,
+  TestimonialRow,
+  TimelineRow,
+  WhyChooseUsRow,
+} from "@/lib/content/schema";
 
 type Collections = {
-  [K in CollectionKey]: WithMeta<CollectionRowMap[K]>[];
+  [K in CollectionKey]: WithMeta<SchemaRowMap[K]>[];
 };
 
 export type AdminState = {
@@ -83,289 +88,110 @@ export type AdminState = {
   enrollments: Enrollment[];
   messages: ContactMessage[];
   media: MediaItem[];
-  /** Phase 1 session flag only — replaced by real server sessions in phase 2. */
+  /** True when a valid server session cookie is present. */
   signedIn: boolean;
+  /** False while ADMIN_PASSCODE / SESSION_SECRET are still unset on the server. */
+  hardened: boolean;
+  /** "memory" until a database driver is configured; "sql" once it is. */
+  driver: "memory" | "sql";
+  /** False until the first server snapshot has arrived. */
+  loaded: boolean;
 };
-
-/* ------------------------------------------------------------------ */
-/* Seeding                                                            */
-/* ------------------------------------------------------------------ */
-
-let idCounter = 0;
-function nextId(prefix: string): Id {
-  idCounter += 1;
-  return `${prefix}-${idCounter}`;
-}
-
-const now = () => new Date().toISOString();
-
-/**
- * Swaps two positions and rewrites `order` to match the new array order.
- * Written without tuple destructuring because `noUncheckedIndexedAccess`
- * types indexed reads as possibly-undefined.
- */
-function reorder<T extends { order: number }>(rows: T[], index: number, target: number): T[] {
-  const sorted = [...rows].sort((a, b) => a.order - b.order);
-  if (index < 0 || target < 0 || index >= sorted.length || target >= sorted.length) return rows;
-  const moving = sorted[index];
-  const displaced = sorted[target];
-  if (!moving || !displaced) return rows;
-  sorted[index] = displaced;
-  sorted[target] = moving;
-  return sorted.map((row, position) => ({ ...row, order: position }));
-}
-
-function withMeta<T extends object>(
-  rows: readonly T[],
-  prefix: string,
-  featuredOf?: (row: T) => boolean,
-): WithMeta<T>[] {
-  return rows.map((row, index) => ({
-    ...row,
-    id: nextId(prefix),
-    published: true,
-    featured: featuredOf ? featuredOf(row) : false,
-    order: index,
-    updatedAt: now(),
-  }));
-}
-
-function seedState(): AdminState {
-  return {
-    collections: {
-      courses: withMeta(seedCourses, "course", (c) => c.featured),
-      subjects: withMeta(seedSubjects, "subject"),
-      teachers: withMeta(seedTeachers, "teacher"),
-      examBoards: withMeta(seedExamBoards, "board"),
-      statistics: withMeta(seedStats, "stat"),
-      results: withMeta(seedResults, "result", (r) => r.grade.includes("A")),
-      achievements: withMeta(seedAchievements, "achievement"),
-      testimonials: withMeta(seedTestimonials, "testimonial"),
-      whyChooseUs: withMeta(seedWhyChooseUs, "why"),
-      timeline: withMeta(seedTimeline, "milestone"),
-    },
-    settings: {
-      name: seedSite.name,
-      tagline: seedSite.tagline,
-      phone: seedSite.phone,
-      email: seedSite.email,
-      address: seedSite.address,
-      hours: seedSite.hours,
-      logoUrl: "/src/assets/logo/P_logo.png",
-      facebook: seedSite.socials.facebook,
-      instagram: seedSite.socials.instagram,
-      youtube: seedSite.socials.youtube,
-      whatsapp: seedSite.socials.whatsapp,
-      footerNote: "Premium O Level, A Level and IGCSE preparation.",
-    },
-    homepage: {
-      heroEyebrow: "Premium O Level, A Level & IGCSE Institute",
-      heroHeading: "Achieve More. Learn Better. Succeed Further.",
-      heroDescription:
-        "Premium O Level, A Level & IGCSE preparation with experienced teachers, focused learning and proven academic results.",
-      heroImageUrl: "/src/assets/hero-students.jpg",
-      heroBullets: [
-        "Cambridge & Edexcel pathways",
-        "Small groups with focused feedback",
-        "Past-paper driven preparation",
-      ],
-      primaryCtaLabel: "Explore Courses",
-      primaryCtaHref: "/courses",
-      secondaryCtaLabel: "Enroll Now",
-      secondaryCtaHref: "/admissions",
-      ctaHeading: "Ready to start your best academic year yet?",
-      ctaDescription:
-        "Speak to an academic advisor about the right course, level and schedule for your goals.",
-      ctaButtonLabel: "Apply for Admission",
-      ctaButtonHref: "/admissions",
-    },
-    sections: [
-      { id: "hero", label: "Hero", source: "hero", visible: true, order: 0 },
-      { id: "stats", label: "Statistics", source: "statistics", visible: true, order: 1 },
-      { id: "courses", label: "Featured Courses", source: "courses", visible: true, order: 2 },
-      { id: "subjects", label: "Featured Subjects", source: "subjects", visible: true, order: 3 },
-      { id: "teachers", label: "Featured Teachers", source: "teachers", visible: true, order: 4 },
-      { id: "boards", label: "Exam Boards", source: "examBoards", visible: true, order: 5 },
-      { id: "why", label: "Why Choose Us", source: "whyChooseUs", visible: true, order: 6 },
-      { id: "results", label: "Results", source: "results", visible: true, order: 7 },
-      {
-        id: "achievements",
-        label: "Achievements",
-        source: "achievements",
-        visible: true,
-        order: 8,
-      },
-      {
-        id: "testimonials",
-        label: "Testimonials",
-        source: "testimonials",
-        visible: true,
-        order: 9,
-      },
-      { id: "cta", label: "Call To Action", source: "cta", visible: true, order: 10 },
-    ],
-    // Sample inbox rows so the screens can be reviewed. Replaced by real
-    // submissions once the database and public forms are wired in phase 2.
-    enrollments: [
-      {
-        id: "enr-1",
-        name: "Sample Applicant — Ali",
-        email: "applicant.one@example.com",
-        phone: "+92 300 000 0001",
-        course: "IGCSE Mathematics (Extended)",
-        level: "IGCSE",
-        status: "new",
-        submittedAt: "2026-08-14T09:20:00.000Z",
-        note: "Asked about the Saturday morning batch.",
-      },
-      {
-        id: "enr-2",
-        name: "Sample Applicant — Zara",
-        email: "applicant.two@example.com",
-        phone: "+92 300 000 0002",
-        course: "A Level Economics",
-        level: "A Level",
-        status: "contacted",
-        submittedAt: "2026-08-12T14:05:00.000Z",
-        note: "Sent fee structure, awaiting reply.",
-      },
-      {
-        id: "enr-3",
-        name: "Sample Applicant — Bilal",
-        email: "applicant.three@example.com",
-        phone: "+92 300 000 0003",
-        course: "O Level Accounting",
-        level: "O Level",
-        status: "enrolled",
-        submittedAt: "2026-08-05T11:40:00.000Z",
-        note: "Joined the evening batch.",
-      },
-    ],
-    messages: [
-      {
-        id: "msg-1",
-        name: "Sample Enquiry — Ms. N.",
-        email: "enquiry.one@example.com",
-        subject: "Fee structure for two subjects",
-        message:
-          "Could you share the monthly fee if my daughter takes both Physics and Chemistry at IGCSE?",
-        read: false,
-        submittedAt: "2026-08-15T08:15:00.000Z",
-      },
-      {
-        id: "msg-2",
-        name: "Sample Enquiry — Mr. S.",
-        email: "enquiry.two@example.com",
-        subject: "Weekend batch availability",
-        message: "Are there any weekend-only options for A Level Business?",
-        read: true,
-        submittedAt: "2026-08-11T16:30:00.000Z",
-      },
-    ],
-    media: [
-      {
-        id: "media-1",
-        label: "Site logo",
-        url: "/src/assets/logo/P_logo.png",
-        usage: "Navbar, footer",
-        updatedAt: "2026-07-01T00:00:00.000Z",
-      },
-      {
-        id: "media-2",
-        label: "Homepage hero",
-        url: "/src/assets/hero-students.jpg",
-        usage: "Homepage hero, About page",
-        updatedAt: "2026-07-01T00:00:00.000Z",
-      },
-    ],
-    signedIn: false,
-  };
-}
 
 /* ------------------------------------------------------------------ */
 /* Store plumbing                                                     */
 /* ------------------------------------------------------------------ */
 
-let state: AdminState = seedState();
-let hydrated = false;
+function initialState(): AdminState {
+  return {
+    ...seedContent(),
+    enrollments: [],
+    messages: [],
+    media: seedMedia(),
+    signedIn: false,
+    hardened: true,
+    driver: "memory",
+    loaded: false,
+  };
+}
+
+let state: AdminState = initialState();
+let started = false;
 const listeners = new Set<() => void>();
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
-function persist() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Storage can be full or blocked (private mode). Edits still work in-memory.
-  }
-}
-
-/** Restores the previous draft once, on the client only, to keep SSR output stable. */
-function hydrateOnce() {
-  if (hydrated || typeof window === "undefined") return;
-  hydrated = true;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Partial<AdminState>;
-    if (!parsed || typeof parsed !== "object" || !parsed.collections) return;
-    state = {
-      ...state,
-      ...parsed,
-      collections: { ...state.collections, ...parsed.collections },
-      settings: { ...state.settings, ...parsed.settings },
-      homepage: { ...state.homepage, ...parsed.homepage },
-    };
-    emit();
-  } catch {
-    // Corrupt draft: fall back to the seeded state rather than crashing the panel.
-  }
-}
-
 function setState(update: (current: AdminState) => AdminState) {
   state = update(state);
-  persist();
   emit();
 }
 
+/** Pulls session info, and the full snapshot when the session is valid. */
+async function refresh() {
+  try {
+    const session = await fetchAdminSession();
+    if (!session.signedIn) {
+      setState((current) => ({
+        ...current,
+        signedIn: false,
+        hardened: session.hardened,
+        driver: session.driver,
+        loaded: true,
+      }));
+      return;
+    }
+    const snapshot = await fetchAdminSnapshot();
+    setState((current) => ({
+      ...current,
+      ...snapshot,
+      signedIn: true,
+      hardened: session.hardened,
+      driver: session.driver,
+      loaded: true,
+    }));
+  } catch {
+    // Network or auth failure: keep the last known state and mark it loaded so
+    // the panel renders the sign-in screen instead of an indefinite spinner.
+    setState((current) => ({ ...current, signedIn: false, loaded: true }));
+  }
+}
+
 function subscribe(listener: () => void) {
-  hydrateOnce();
   listeners.add(listener);
+  if (!started && typeof window !== "undefined") {
+    started = true;
+    void refresh();
+  }
   return () => listeners.delete(listener);
 }
 
 const getSnapshot = () => state;
-/** SSR must not read localStorage, so it always renders the seeded snapshot. */
+/** SSR always renders the seeded snapshot so client hydration matches. */
 const getServerSnapshot = () => state;
 
 export function useAdminState(): AdminState {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+/** Re-reads server state; exported for screens that need an explicit refresh. */
+export async function refreshAdminState() {
+  await refresh();
+}
+
 /* ------------------------------------------------------------------ */
 /* Collection CRUD                                                    */
 /* ------------------------------------------------------------------ */
 
-function mutateCollection<K extends CollectionKey>(
-  key: K,
-  update: (rows: WithMeta<CollectionRowMap[K]>[]) => WithMeta<CollectionRowMap[K]>[],
-) {
-  setState((current) => ({
-    ...current,
-    collections: { ...current.collections, [key]: update(current.collections[key]) },
-  }));
-}
-
 /**
- * Returns the CrudApi for a collection. The async signatures mirror what real
- * server-function calls will look like, so screens already await their writes.
+ * Returns the CrudApi for a collection. Each mutation awaits the server and then
+ * refreshes, so a rejected write (expired session, validation failure) never
+ * leaves stale data on screen.
  */
 export function useCollection<K extends CollectionKey>(
   key: K,
-): CrudApi<CollectionRowMap[K]> & { rows: WithMeta<CollectionRowMap[K]>[] } {
+): CrudApi<SchemaRowMap[K]> & { rows: WithMeta<SchemaRowMap[K]>[] } {
   const snapshot = useAdminState();
   const rows = useMemo(
     () => [...snapshot.collections[key]].sort((a, b) => a.order - b.order),
@@ -375,63 +201,52 @@ export function useCollection<K extends CollectionKey>(
   const list = useCallback(() => rows, [rows]);
 
   const create = useCallback(
-    async (input: CollectionRowMap[K]) => {
-      const row = {
-        ...input,
-        id: nextId(key),
-        published: true,
-        featured: false,
-        order: state.collections[key].length,
-        updatedAt: now(),
-      } as WithMeta<CollectionRowMap[K]>;
-      mutateCollection(key, (existing) => [...existing, row]);
-      return row;
+    async (input: SchemaRowMap[K]) => {
+      const row = await createRow({
+        data: { key, data: input as Record<string, unknown> },
+      });
+      await refresh();
+      return row as WithMeta<SchemaRowMap[K]>;
     },
     [key],
   );
 
   const update = useCallback(
-    async (id: Id, input: Partial<CollectionRowMap[K]>) => {
-      mutateCollection(key, (existing) =>
-        existing.map((row) => (row.id === id ? { ...row, ...input, updatedAt: now() } : row)),
-      );
+    async (id: Id, input: Partial<SchemaRowMap[K]>) => {
+      await updateRow({ data: { key, id, data: input as Record<string, unknown> } });
+      await refresh();
     },
     [key],
   );
 
   const remove = useCallback(
     async (id: Id) => {
-      mutateCollection(key, (existing) => existing.filter((row) => row.id !== id));
+      await deleteRow({ data: { key, id } });
+      await refresh();
     },
     [key],
   );
 
   const setPublished = useCallback(
     async (id: Id, published: boolean) => {
-      mutateCollection(key, (existing) =>
-        existing.map((row) => (row.id === id ? { ...row, published, updatedAt: now() } : row)),
-      );
+      await setRowFlag({ data: { key, id, flag: "published", value: published } });
+      await refresh();
     },
     [key],
   );
 
   const setFeatured = useCallback(
     async (id: Id, featured: boolean) => {
-      mutateCollection(key, (existing) =>
-        existing.map((row) => (row.id === id ? { ...row, featured, updatedAt: now() } : row)),
-      );
+      await setRowFlag({ data: { key, id, flag: "featured", value: featured } });
+      await refresh();
     },
     [key],
   );
 
   const move = useCallback(
     async (id: Id, direction: -1 | 1) => {
-      mutateCollection(key, (existing) => {
-        const sorted = [...existing].sort((a, b) => a.order - b.order);
-        const index = sorted.findIndex((row) => row.id === id);
-        if (index === -1) return existing;
-        return reorder(sorted, index, index + direction);
-      });
+      await moveRow({ data: { key, id, direction } });
+      await refresh();
     },
     [key],
   );
@@ -444,27 +259,39 @@ export function useCollection<K extends CollectionKey>(
 /* ------------------------------------------------------------------ */
 
 export async function saveSettings(input: SiteSettings) {
-  setState((current) => ({ ...current, settings: input }));
+  await saveSettingsFn({ data: input });
+  await refresh();
 }
 
 export async function saveHomepage(input: HomepageContent) {
-  setState((current) => ({ ...current, homepage: input }));
+  await saveHomepageFn({ data: input });
+  await refresh();
 }
 
 export async function toggleSection(id: string, visible: boolean) {
-  setState((current) => ({
-    ...current,
-    sections: current.sections.map((s) => (s.id === id ? { ...s, visible } : s)),
-  }));
+  const next = state.sections.map((section) =>
+    section.id === id ? { ...section, visible } : section,
+  );
+  await saveSections({ data: next });
+  await refresh();
 }
 
 export async function moveSection(id: string, direction: -1 | 1) {
-  setState((current) => {
-    const sorted = [...current.sections].sort((a, b) => a.order - b.order);
-    const index = sorted.findIndex((s) => s.id === id);
-    if (index === -1) return current;
-    return { ...current, sections: reorder(sorted, index, index + direction) };
+  const sorted = [...state.sections].sort((a, b) => a.order - b.order);
+  const index = sorted.findIndex((section) => section.id === id);
+  const target = index + direction;
+  if (index === -1 || target < 0 || target >= sorted.length) return;
+
+  const moving = sorted[index];
+  const displaced = sorted[target];
+  if (!moving || !displaced) return;
+  sorted[index] = displaced;
+  sorted[target] = moving;
+
+  await saveSections({
+    data: sorted.map((section, position) => ({ ...section, order: position })),
   });
+  await refresh();
 }
 
 /* ------------------------------------------------------------------ */
@@ -472,75 +299,61 @@ export async function moveSection(id: string, direction: -1 | 1) {
 /* ------------------------------------------------------------------ */
 
 export async function setEnrollmentStatus(id: Id, status: Enrollment["status"]) {
-  setState((current) => ({
-    ...current,
-    enrollments: current.enrollments.map((e) => (e.id === id ? { ...e, status } : e)),
-  }));
+  await setEnrollmentStatusFn({ data: { id, status } });
+  await refresh();
 }
 
 export async function deleteEnrollment(id: Id) {
-  setState((current) => ({
-    ...current,
-    enrollments: current.enrollments.filter((e) => e.id !== id),
-  }));
+  await deleteEnrollmentFn({ data: { id } });
+  await refresh();
 }
 
 export async function setMessageRead(id: Id, read: boolean) {
-  setState((current) => ({
-    ...current,
-    messages: current.messages.map((m) => (m.id === id ? { ...m, read } : m)),
-  }));
+  await setMessageReadFn({ data: { id, read } });
+  await refresh();
 }
 
 export async function deleteMessage(id: Id) {
-  setState((current) => ({
-    ...current,
-    messages: current.messages.filter((m) => m.id !== id),
-  }));
+  await deleteMessageFn({ data: { id } });
+  await refresh();
 }
 
 export async function saveMediaUrl(id: Id, url: string) {
-  setState((current) => ({
-    ...current,
-    media: current.media.map((m) => (m.id === id ? { ...m, url, updatedAt: now() } : m)),
-  }));
+  await saveMediaUrlFn({ data: { id, url } });
+  await refresh();
 }
 
 export async function addMedia(label: string, url: string, usage: string) {
-  setState((current) => ({
-    ...current,
-    media: [...current.media, { id: nextId("media"), label, url, usage, updatedAt: now() }],
-  }));
+  await addMediaFn({ data: { label, url, usage } });
+  await refresh();
 }
 
 export async function deleteMedia(id: Id) {
-  setState((current) => ({ ...current, media: current.media.filter((m) => m.id !== id) }));
+  await deleteMediaFn({ data: { id } });
+  await refresh();
 }
 
 /* ------------------------------------------------------------------ */
-/* Phase 1 session gate                                               */
+/* Session                                                            */
 /* ------------------------------------------------------------------ */
 
 /**
- * Local-only gate so the panel isn't wide open during review.
- * This is NOT security: it runs entirely in the browser and protects nothing.
- * Phase 2 replaces it with a server session + hashed credentials, at which point
- * /admin and every mutation is enforced on the server.
+ * Signs in against the server. The passcode is sent once, compared server-side
+ * against ADMIN_PASSCODE, and never stored in the browser.
  */
-export const REVIEW_PASSCODE = "bfge-admin";
-
 export async function signIn(passcode: string): Promise<boolean> {
-  if (passcode !== REVIEW_PASSCODE) return false;
-  setState((current) => ({ ...current, signedIn: true }));
-  return true;
+  const { ok } = await adminSignIn({ data: { passcode } });
+  if (ok) await refresh();
+  return ok;
 }
 
 export async function signOut() {
-  setState((current) => ({ ...current, signedIn: false }));
+  await adminSignOut();
+  await refresh();
 }
 
-export function resetDraft() {
-  state = seedState();
-  persist();
-  emit();
+/** Destructive: discards every edit on the server and restores seed content. */
+export async function resetDraft() {
+  await resetContent();
+  await refresh();
 }

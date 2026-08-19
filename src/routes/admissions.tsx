@@ -5,6 +5,7 @@ import { z } from "zod";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
 import { boards, courses, levels, subjects } from "@/data/institute";
+import { submitEnrollment } from "@/lib/content/server";
 
 export const Route = createFileRoute("/admissions")({
   head: () => ({
@@ -65,7 +66,7 @@ function Field({
   children,
 }: {
   label: string;
-  error?: string;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -82,10 +83,15 @@ function Field({
 function AdmissionsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.currentTarget));
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+
+    // Client-side validation is for fast feedback only; the server function
+    // re-validates the same fields before anything is stored.
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -94,10 +100,38 @@ function AdmissionsPage() {
       toast.error("Please correct the highlighted fields");
       return;
     }
+
     setErrors({});
-    setSubmitted(true);
-    e.currentTarget.reset();
-    toast.success("Enquiry received — our admissions team will call you shortly.");
+    setPending(true);
+    try {
+      await submitEnrollment({
+        data: {
+          name: parsed.data.student,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+          // The admin inbox stores one course label, so fall back to the chosen
+          // subject when no specific course was selected.
+          course: parsed.data.course?.trim() ? parsed.data.course : parsed.data.subject,
+          level: parsed.data.level,
+          note: [
+            `Guardian: ${parsed.data.guardian}`,
+            `Board: ${parsed.data.board}`,
+            `Subject: ${parsed.data.subject}`,
+            parsed.data.message?.trim() ? `Message: ${parsed.data.message}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n")
+            .slice(0, 4000),
+        },
+      });
+      setSubmitted(true);
+      form.reset();
+      toast.success("Enquiry received — our admissions team will call you shortly.");
+    } catch {
+      toast.error("Could not submit right now. Please call or email us instead.");
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -166,8 +200,8 @@ function AdmissionsPage() {
         <div className="mt-16 rounded-2xl border border-border bg-card p-8 shadow-elegant md:p-10">
           <h2 className="text-2xl font-semibold">Enrollment form</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Submissions are validated in the browser for this preview; they will be stored once the
-            backend is connected.
+            Your details go straight to our admissions team. Required fields are marked by the
+            validation messages below.
           </p>
 
           {submitted && (
@@ -177,7 +211,7 @@ function AdmissionsPage() {
           )}
 
           <form onSubmit={onSubmit} noValidate className="mt-8 grid gap-5 md:grid-cols-2">
-            <Field label="Student name" error={errors.student}>
+            <Field label="Student name" error={errors["student"]}>
               <input
                 name="student"
                 maxLength={100}
@@ -185,7 +219,7 @@ function AdmissionsPage() {
                 placeholder="Full name"
               />
             </Field>
-            <Field label="Parent / guardian name" error={errors.guardian}>
+            <Field label="Parent / guardian name" error={errors["guardian"]}>
               <input
                 name="guardian"
                 maxLength={100}
@@ -193,7 +227,7 @@ function AdmissionsPage() {
                 placeholder="Full name"
               />
             </Field>
-            <Field label="Email" error={errors.email}>
+            <Field label="Email" error={errors["email"]}>
               <input
                 name="email"
                 type="email"
@@ -202,7 +236,7 @@ function AdmissionsPage() {
                 placeholder="you@example.com"
               />
             </Field>
-            <Field label="Phone" error={errors.phone}>
+            <Field label="Phone" error={errors["phone"]}>
               <input
                 name="phone"
                 maxLength={30}
@@ -210,7 +244,7 @@ function AdmissionsPage() {
                 placeholder="+92 300 0000000"
               />
             </Field>
-            <Field label="Level" error={errors.level}>
+            <Field label="Level" error={errors["level"]}>
               <select name="level" defaultValue="" className={inputClass}>
                 <option value="">Select level</option>
                 {levels.map((l) => (
@@ -218,7 +252,7 @@ function AdmissionsPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Exam board" error={errors.board}>
+            <Field label="Exam board" error={errors["board"]}>
               <select name="board" defaultValue="" className={inputClass}>
                 <option value="">Select board</option>
                 {boards.map((b) => (
@@ -226,7 +260,7 @@ function AdmissionsPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Subject" error={errors.subject}>
+            <Field label="Subject" error={errors["subject"]}>
               <select name="subject" defaultValue="" className={inputClass}>
                 <option value="">Select subject</option>
                 {subjects.map((s) => (
@@ -256,9 +290,10 @@ function AdmissionsPage() {
             <div className="md:col-span-2">
               <button
                 type="submit"
-                className="w-full rounded-xl bg-[image:var(--gradient-primary)] px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5 md:w-auto"
+                disabled={pending}
+                className="w-full rounded-xl bg-[image:var(--gradient-primary)] px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
               >
-                Submit enrollment enquiry
+                {pending ? "Submitting…" : "Submit enrollment enquiry"}
               </button>
             </div>
           </form>

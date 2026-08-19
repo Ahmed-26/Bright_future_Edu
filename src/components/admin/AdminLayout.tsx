@@ -1,11 +1,13 @@
 /**
- * Admin shell: sidebar navigation, mobile drawer and the phase-1 sign-in gate.
+ * Admin shell: sidebar navigation, mobile drawer and the sign-in gate.
  *
- * SECURITY NOTE: the gate below is client-side only and protects nothing. It
- * exists so the panel is not immediately open during review. Real protection
- * requires a server session — see the phase-2 note in store.ts. Do not deploy
- * this panel publicly as-is.
+ * The gate below is a UI convenience only — the real check happens on the
+ * server. `signIn` posts the passcode to a server function which compares it
+ * against ADMIN_PASSCODE and sets an httpOnly session cookie, and every admin
+ * read/write independently calls `requireAdmin()`. Hiding or showing this gate
+ * therefore cannot grant access to data.
  */
+
 
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
@@ -37,7 +39,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-import { REVIEW_PASSCODE, resetDraft, signIn, signOut, useAdminState } from "./store";
+import { resetDraft, signIn, signOut, useAdminState } from "./store";
 
 const navGroups = [
   {
@@ -77,11 +79,23 @@ const navGroups = [
 ] as const;
 
 export function AdminLayout() {
-  const { signedIn } = useAdminState();
+  const { signedIn, hardened, driver, loaded } = useAdminState();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  if (!signedIn) return <SignInGate />;
+  // Avoid flashing the sign-in form before the session check comes back.
+  if (!loaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-5">
+        <p className="text-sm text-muted-foreground" role="status">
+          Loading admin panel…
+        </p>
+      </div>
+    );
+  }
+
+  if (!signedIn) return <SignInGate hardened={hardened} />;
+
 
   return (
     <div className="min-h-screen bg-muted/40">
@@ -146,7 +160,7 @@ export function AdminLayout() {
             </div>
           </header>
 
-          <DraftBanner />
+          <StatusBanner driver={driver} hardened={hardened} />
 
           <main className="px-5 py-8">
             <Outlet />
@@ -208,44 +222,79 @@ function SidebarContent({
   );
 }
 
-/** Makes the phase-1 limitation impossible to miss while reviewing. */
-function DraftBanner() {
+/**
+ * Surfaces the two deployment caveats that actually matter:
+ *   - the memory driver loses everything on restart (no DATABASE_URL yet)
+ *   - auth is not hardened while ADMIN_PASSCODE / SESSION_SECRET are unset
+ * When both are configured the banner disappears entirely.
+ */
+function StatusBanner({ driver, hardened }: { driver: "memory" | "sql"; hardened: boolean }) {
+  const [resetting, setResetting] = useState(false);
+  if (driver === "sql" && hardened) return null;
+
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-amber-300/60 bg-amber-50 px-5 py-2.5 text-xs text-amber-900">
       <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0">
-        Draft mode: edits are saved in this browser only and do not change the public site yet. A
-        database and server-side login are still to be connected.
+        {driver === "memory" && (
+          <>
+            In-memory storage: edits are saved on the server and visible on the public site, but are
+            lost when the server restarts. Set DATABASE_URL to persist them.{" "}
+          </>
+        )}
+        {!hardened && <>Set ADMIN_PASSCODE and SESSION_SECRET before exposing this panel publicly.</>}
       </p>
       <Button
         variant="outline"
         size="sm"
+        disabled={resetting}
         className="ml-auto h-7 border-amber-400 bg-white text-amber-900 hover:bg-amber-100"
-        onClick={() => {
-          resetDraft();
-          toast.success("Draft reset to the original site content");
+        onClick={async () => {
+          // Destructive: wipes every server-side edit, not just this browser's.
+          if (!window.confirm("Discard all content edits and restore the original site content?")) {
+            return;
+          }
+          setResetting(true);
+          try {
+            await resetDraft();
+            toast.success("Content reset to the original site content");
+          } catch {
+            toast.error("Reset failed");
+          } finally {
+            setResetting(false);
+          }
         }}
       >
-        Reset draft
+        {resetting ? "Resetting…" : "Reset content"}
       </Button>
     </div>
   );
 }
 
-function SignInGate() {
+function SignInGate({ hardened }: { hardened: boolean }) {
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
+  const [pending, setPending] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    const ok = await signIn(passcode.trim());
-    if (!ok) {
-      setError(true);
-      toast.error("Incorrect passcode");
-      return;
+    setPending(true);
+    try {
+      const ok = await signIn(passcode.trim());
+      if (!ok) {
+        setError(true);
+        toast.error("Incorrect passcode");
+        return;
+      }
+      setError(false);
+      // Clear immediately so the value is not left sitting in component state.
+      setPasscode("");
+      toast.success("Signed in");
+    } catch {
+      toast.error("Sign in failed");
+    } finally {
+      setPending(false);
     }
-    setError(false);
-    toast.success("Signed in");
   }
 
   return (
@@ -253,7 +302,7 @@ function SignInGate() {
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-7 shadow-card">
         <h1 className="text-xl font-semibold tracking-tight">Admin sign in</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Enter the review passcode to open the content panel.
+          Enter the admin passcode to open the content panel.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
@@ -265,15 +314,11 @@ function SignInGate() {
               autoComplete="current-password"
               value={passcode}
               aria-invalid={error || undefined}
-              aria-describedby="admin-passcode-help"
               onChange={(e) => {
                 setPasscode(e.target.value);
                 setError(false);
               }}
             />
-            <p id="admin-passcode-help" className="text-xs text-muted-foreground">
-              Review passcode: <code className="font-mono">{REVIEW_PASSCODE}</code>
-            </p>
           </div>
 
           {error && (
@@ -282,18 +327,20 @@ function SignInGate() {
             </p>
           )}
 
-          <Button type="submit" className="w-full">
-            Sign in
+          <Button type="submit" className="w-full" disabled={pending || !passcode.trim()}>
+            {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
 
-        <p className="mt-5 flex gap-2 rounded-md bg-amber-50 p-3 text-xs text-amber-900">
-          <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
-          <span>
-            This check runs in the browser and is not real security. Server-side authentication is
-            required before this panel goes live.
-          </span>
-        </p>
+        {!hardened && (
+          <p className="mt-5 flex gap-2 rounded-md bg-amber-50 p-3 text-xs text-amber-900">
+            <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
+            <span>
+              ADMIN_PASSCODE and SESSION_SECRET are not set on the server, so a development default
+              is in use. Set both before this panel is reachable publicly.
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

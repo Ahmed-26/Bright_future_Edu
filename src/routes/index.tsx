@@ -254,7 +254,9 @@ function HomePage() {
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {popularSubjects.map((subject, index) => {
-            const Icon = featureIcons[index % featureIcons.length];
+            // Modulo keeps this in range; the fallback only satisfies the
+            // noUncheckedIndexedAccess check.
+            const Icon = featureIcons[index % featureIcons.length] ?? Users;
             return (
               <Reveal key={subject.slug} delay={index * 55}>
                 <article className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
@@ -318,7 +320,7 @@ function HomePage() {
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {whyChooseUs.map((item, index) => {
-              const Icon = featureIcons[index % featureIcons.length];
+              const Icon = featureIcons[index % featureIcons.length] ?? Users;
               return (
                 <Reveal key={item.title} delay={(index % 4) * 70}>
                   <article className="h-full rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
