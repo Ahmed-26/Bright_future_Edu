@@ -7,7 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { ArrowUp } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -131,6 +132,22 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 320);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -142,6 +159,20 @@ function RootComponent() {
         </main>
         <Footer />
       </div>
+
+      <button
+        type="button"
+        aria-label="Scroll to top"
+        onClick={scrollToTop}
+        className={[
+          "fixed bottom-6 right-6 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-all duration-300 hover:scale-105 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          showScrollTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
+        ].join(" ")}
+        style={{ width: 48, height: 48 }}
+      >
+        <ArrowUp className="h-5 w-5" />
+      </button>
+
       <Toaster />
     </QueryClientProvider>
   );
