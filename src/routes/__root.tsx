@@ -166,7 +166,9 @@ function RootComponent() {
         onClick={scrollToTop}
         className={[
           "fixed bottom-6 right-6 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-all duration-300 hover:scale-105 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          showScrollTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
+          showScrollTop
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-3 opacity-0",
         ].join(" ")}
         style={{ width: 48, height: 48 }}
       >
