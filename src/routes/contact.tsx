@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
-import { site } from "@/data/institute";
+import { useSiteSettings } from "@/hooks/useSiteContent";
 import { submitMessage } from "@/lib/content/server";
 
 export const Route = createFileRoute("/contact")({
@@ -35,6 +35,8 @@ const inputClass =
   "w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring";
 
 function ContactPage() {
+  // Address, phone, email and hours come from admin Settings.
+  const site = useSiteSettings();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
 

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Award } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { achievements } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/achievements")({
@@ -25,10 +25,13 @@ export const Route = createFileRoute("/achievements")({
   component: AchievementsPage,
 });
 
-const categories = ["All", ...Array.from(new Set(achievements.map((a) => a.category)))];
-
 function AchievementsPage() {
+  const achievements = useCollection("achievements");
   const [category, setCategory] = useState("All");
+
+  // Filters are derived from live rows, so a new category added in the admin
+  // panel appears here automatically.
+  const categories = ["All", ...Array.from(new Set(achievements.map((a) => a.category)))];
   const list = achievements.filter((a) => category === "All" || a.category === category);
 
   return (
@@ -36,7 +39,7 @@ function AchievementsPage() {
       <PageHeader
         eyebrow="Recognition"
         title="Achievements"
-        description="Distinctions, awards and milestones recorded across the academy. All entries below are demonstration data."
+        description="Distinctions, awards and milestones recorded across the academy."
       />
 
       <section className="mx-auto max-w-7xl px-5 py-16">
@@ -65,7 +68,7 @@ function AchievementsPage() {
         ) : (
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {list.map((a, i) => (
-              <Reveal key={a.title} delay={(i % 3) * 70}>
+              <Reveal key={a.id} delay={(i % 3) * 70}>
                 <article className="flex h-full flex-col rounded-2xl border border-border bg-card p-7 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                   <div className="flex items-center justify-between">
                     <span className="grid size-11 place-items-center rounded-xl bg-[image:var(--gradient-gold)] text-accent-foreground">

@@ -18,17 +18,8 @@ import campus from "@/assets/hero-students.jpg";
 import { Counter } from "@/components/site/Counter";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
-import {
-  achievements,
-  courses,
-  examBoards,
-  results,
-  subjects,
-  teachers,
-  testimonials,
-  whyChooseUs,
-  stats,
-} from "@/data/institute";
+import { featuredOnly, useCollection, useHomepage, useSections } from "@/hooks/useSiteContent";
+import { isSectionVisible } from "@/lib/content/schema";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -53,19 +44,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const popularCourses = courses.filter((course) => course.featured).slice(0, 6);
-const popularSubjects = subjects.slice(0, 8);
-const featuredTeachers = teachers.slice(0, 4);
-const featuredResults = results.filter((result) => result.grade.includes("A")).slice(0, 6);
-const featuredAchievements = achievements.slice(0, 4);
-const testimonialsPreview = testimonials.slice(0, 4);
-
-const heroBullets = [
-  "Cambridge & Edexcel pathways",
-  "Small groups with focused feedback",
-  "Past-paper driven preparation",
-];
-
 const featureIcons = [
   Users,
   ShieldCheck,
@@ -78,6 +56,27 @@ const featureIcons = [
 ];
 
 function HomePage() {
+  // Hero copy, CTA copy and section visibility are admin-editable; every list
+  // below is the published collection with featured rows preferred.
+  const homepage = useHomepage();
+  const sections = useSections();
+  const visible = (id: string) => isSectionVisible(sections, id);
+
+  const stats = useCollection("statistics");
+  const examBoards = useCollection("examBoards");
+  const whyChooseUs = useCollection("whyChooseUs");
+  const popularCourses = featuredOnly(useCollection("courses")).slice(0, 6);
+  const popularSubjects = featuredOnly(useCollection("subjects")).slice(0, 8);
+  const featuredTeachers = featuredOnly(useCollection("teachers")).slice(0, 4);
+  const featuredAchievements = featuredOnly(useCollection("achievements")).slice(0, 4);
+  const testimonialsPreview = featuredOnly(useCollection("testimonials")).slice(0, 4);
+
+  const allResults = useCollection("results");
+  const topResults = allResults.filter((result) => result.grade.includes("A"));
+  const featuredResults = (topResults.length > 0 ? topResults : allResults).slice(0, 6);
+
+  const heroImage = homepage.heroImageUrl.trim() || campus;
+
   return (
     <div className="overflow-hidden">
       <section className="relative bg-hero text-primary-foreground">
@@ -91,18 +90,17 @@ function HomePage() {
           <Reveal className="relative z-10 max-w-2xl">
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/80 backdrop-blur-md">
               <GraduationCap className="size-4 text-accent" />
-              Premium O Level, A Level & IGCSE Institute
+              {homepage.heroEyebrow}
             </p>
             <h1 className="mt-6 text-5xl font-semibold leading-[0.98] text-balance md:text-6xl lg:text-7xl">
-              Achieve More. Learn Better. Succeed Further.
+              {homepage.heroHeading}
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/78 md:text-xl">
-              Premium O Level, A Level & IGCSE preparation with experienced teachers, focused
-              learning and proven academic results.
+              {homepage.heroDescription}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              {heroBullets.map((item) => (
+              {homepage.heroBullets.map((item) => (
                 <span
                   key={item}
                   className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-primary-foreground/82 backdrop-blur-md"
@@ -113,25 +111,27 @@ function HomePage() {
               ))}
             </div>
 
+            {/* Hrefs are free text in the admin panel, so plain anchors are used
+                instead of typed <Link to>. */}
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/courses"
+              <a
+                href={homepage.primaryCtaHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--gradient-gold)] px-6 py-3.5 text-sm font-semibold text-accent-foreground shadow-elegant transition-transform duration-200 hover:-translate-y-0.5"
               >
-                Explore Courses <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                to="/admissions"
+                {homepage.primaryCtaLabel} <ArrowRight className="size-4" />
+              </a>
+              <a
+                href={homepage.secondaryCtaHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-white/8 px-6 py-3.5 text-sm font-semibold text-primary-foreground backdrop-blur-md transition-colors hover:bg-white/14"
               >
-                Enroll Now <ChevronRight className="size-4" />
-              </Link>
+                {homepage.secondaryCtaLabel} <ChevronRight className="size-4" />
+              </a>
             </div>
 
             <dl className="mt-10 grid gap-4 sm:grid-cols-3">
               {stats.slice(0, 3).map((stat) => (
                 <div
-                  key={stat.label}
+                  key={stat.id}
                   className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-md"
                 >
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/62">
@@ -155,7 +155,7 @@ function HomePage() {
 
             <div className="relative overflow-hidden rounded-[2rem] border border-white/14 bg-white/8 p-4 shadow-elegant backdrop-blur-xl">
               <img
-                src={campus}
+                src={heroImage}
                 alt="Students studying together at the academy"
                 loading="eager"
                 width={1280}
@@ -182,11 +182,12 @@ function HomePage() {
         </div>
       </section>
 
+      {visible("boards") && (
       <section className="border-y border-border/60 bg-background/95">
         <div className="mx-auto max-w-7xl px-5 py-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {examBoards.map((board, index) => (
-              <Reveal key={board.name} delay={index * 55}>
+              <Reveal key={board.id} delay={index * 55}>
                 <div className="group flex h-full items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant">
                   <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-primary transition-colors group-hover:bg-[image:var(--gradient-primary)] group-hover:text-primary-foreground">
                     <ShieldCheck className="size-5" />
@@ -203,12 +204,14 @@ function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visible("stats") && (
       <section className="bg-surface py-20">
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
             {stats.map((stat, index) => (
-              <Reveal key={stat.label} delay={index * 60}>
+              <Reveal key={stat.id} delay={index * 60}>
                 <div className="rounded-2xl border border-border bg-card p-7 text-center shadow-card">
                   <p className="font-display text-4xl font-semibold text-primary">
                     <Counter value={stat.value} suffix={stat.suffix} />
@@ -222,16 +225,19 @@ function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visible("courses") && (
+      <>
       <SectionHeading
         eyebrow="Popular courses"
         title="Popular Courses"
-        description="Featured programmes pulled from the existing course catalogue and presented in the same design system."
+        description="Featured programmes from the published catalogue, ready for enrollment this term."
       />
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {popularCourses.map((course, index) => (
-            <Reveal key={course.slug} delay={index * 70}>
+            <Reveal key={course.id} delay={index * 70}>
               <CourseCard course={course} />
             </Reveal>
           ))}
@@ -245,11 +251,15 @@ function HomePage() {
           </Link>
         </div>
       </section>
+      </>
+      )}
 
+      {visible("subjects") && (
+      <>
       <SectionHeading
         eyebrow="What we teach"
         title="Popular Subjects"
-        description="Subject coverage across O Level, A Level and IGCSE with course counts already built into the source data."
+        description="Subject coverage across O Level, A Level and IGCSE, with the number of courses in each."
       />
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -258,7 +268,7 @@ function HomePage() {
             // noUncheckedIndexedAccess check.
             const Icon = featureIcons[index % featureIcons.length] ?? Users;
             return (
-              <Reveal key={subject.slug} delay={index * 55}>
+              <Reveal key={subject.id} delay={index * 55}>
                 <article className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                   <div className="flex items-center justify-between gap-4">
                     <span className="grid size-12 place-items-center rounded-xl bg-muted text-primary transition-colors group-hover:bg-[image:var(--gradient-primary)] group-hover:text-primary-foreground">
@@ -302,7 +312,10 @@ function HomePage() {
           </Link>
         </div>
       </section>
+      </>
+      )}
 
+      {visible("why") && (
       <section className="bg-surface py-20">
         <div className="mx-auto max-w-7xl px-5">
           <div className="mx-auto max-w-3xl text-center">
@@ -322,7 +335,7 @@ function HomePage() {
             {whyChooseUs.map((item, index) => {
               const Icon = featureIcons[index % featureIcons.length] ?? Users;
               return (
-                <Reveal key={item.title} delay={(index % 4) * 70}>
+                <Reveal key={item.id} delay={(index % 4) * 70}>
                   <article className="h-full rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                     <div className="grid size-11 place-items-center rounded-xl bg-muted text-primary">
                       <Icon className="size-5" />
@@ -338,16 +351,19 @@ function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visible("teachers") && (
+      <>
       <SectionHeading
         eyebrow="The faculty"
         title="Featured Teachers"
-        description="A preview of the experienced subject specialists already powering the site’s teachers section."
+        description="Experienced subject specialists guiding every programme we run."
       />
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {featuredTeachers.map((teacher, index) => (
-            <Reveal key={teacher.slug} delay={index * 70}>
+            <Reveal key={teacher.id} delay={index * 70}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                 <div className="relative grid h-48 place-items-center bg-[image:var(--gradient-primary)]">
                   <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_70%_20%,white,transparent_45%)]" />
@@ -395,7 +411,10 @@ function HomePage() {
           </Link>
         </div>
       </section>
+      </>
+      )}
 
+      {(visible("results") || visible("achievements")) && (
       <section className="bg-surface py-20">
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -406,14 +425,13 @@ function HomePage() {
                 </p>
                 <h2 className="mt-4 text-3xl font-semibold">Achievements and results</h2>
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                  A preview of the published results and achievements already represented elsewhere
-                  in the site.
+                  Published grades and awards earned by our students across recent exam sessions.
                 </p>
 
                 <div className="mt-8 space-y-4">
                   {featuredAchievements.map((item) => (
                     <div
-                      key={item.title}
+                      key={item.id}
                       className="rounded-2xl border border-border bg-background/70 p-4"
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -460,7 +478,7 @@ function HomePage() {
               <div className="grid gap-5 sm:grid-cols-2">
                 {featuredResults.map((result) => (
                   <article
-                    key={`${result.student}-${result.subject}-${result.year}`}
+                    key={result.id}
                     className="rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -494,17 +512,20 @@ function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visible("testimonials") && (
+      <>
       <SectionHeading
         eyebrow="Parent and student voices"
         title="Testimonials"
-        description="A lightweight slider built from the existing testimonial data, without adding a new dependency."
+        description="What students and parents say about studying with us."
       />
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 [scrollbar-width:thin]">
           {testimonialsPreview.map((testimonial, index) => (
             <Reveal
-              key={testimonial.name}
+              key={testimonial.id}
               delay={index * 70}
               className="min-w-[320px] flex-1 snap-start sm:min-w-[360px] lg:min-w-[420px]"
             >
@@ -537,7 +558,10 @@ function HomePage() {
           ))}
         </div>
       </section>
+      </>
+      )}
 
+      {visible("cta") && (
       <section className="mx-auto max-w-7xl px-5 pb-20">
         <div className="relative overflow-hidden rounded-[2rem] bg-hero px-8 py-14 text-center text-primary-foreground shadow-elegant sm:px-12">
           <div className="absolute inset-0 opacity-35 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_32%),radial-gradient(circle_at_85%_25%,rgba(255,255,255,0.2),transparent_28%)]" />
@@ -545,19 +569,17 @@ function HomePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
               Final enrollment
             </p>
-            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-              Ready to Achieve Your Academic Goals?
-            </h2>
+            <h2 className="mt-4 text-3xl font-semibold md:text-4xl">{homepage.ctaHeading}</h2>
             <p className="mt-4 text-base leading-relaxed text-primary-foreground/72">
-              Join our expert-led O Level, A Level & IGCSE preparation programs.
+              {homepage.ctaDescription}
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link
-                to="/courses"
+              <a
+                href={homepage.ctaButtonHref}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[image:var(--gradient-gold)] px-6 py-3.5 text-sm font-semibold text-accent-foreground shadow-elegant transition-transform hover:-translate-y-0.5"
               >
-                Explore Courses <ArrowRight className="size-4" />
-              </Link>
+                {homepage.ctaButtonLabel} <ArrowRight className="size-4" />
+              </a>
               <Link
                 to="/admissions"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-white/8 px-6 py-3.5 text-sm font-semibold text-primary-foreground backdrop-blur-md transition-colors hover:bg-white/14"
@@ -568,6 +590,7 @@ function HomePage() {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

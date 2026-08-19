@@ -15,6 +15,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { fetchPublicContent } from "@/lib/content/server";
+import { seedContent } from "@/lib/content/schema";
 
 function NotFoundComponent() {
   return (
@@ -77,6 +79,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  /**
+   * Published content is loaded once at the root and shared by every page via
+   * `useSiteContent()`, so an admin edit shows up site-wide on the next load.
+   * If the read fails the checked-in seed is used so the site still renders.
+   */
+  loader: async () => {
+    try {
+      return await fetchPublicContent();
+    } catch (error) {
+      reportLovableError(error as Error, { boundary: "root_content_loader" });
+      return seedContent();
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

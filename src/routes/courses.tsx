@@ -4,7 +4,8 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, courses, levels, subjects } from "@/data/institute";
+import { levels } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/courses")({
@@ -54,6 +55,11 @@ function Chip({
 }
 
 function CoursesPage() {
+  // Catalogue, subject filter and board chips all come from published content.
+  const courses = useCollection("courses");
+  const subjects = useCollection("subjects");
+  const boards = useMemo(() => Array.from(new Set(courses.map((c) => c.board))).sort(), [courses]);
+
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("All");
   const [board, setBoard] = useState("All");
@@ -72,7 +78,7 @@ function CoursesPage() {
           c.subject.toLowerCase().includes(q) ||
           c.code.toLowerCase().includes(q)),
     );
-  }, [query, level, board, subject]);
+  }, [courses, query, level, board, subject]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const current = Math.min(page, pages);
@@ -112,7 +118,7 @@ function CoursesPage() {
           <div className="mt-6 space-y-4">
             {[
               { label: "Level", value: level, set: setLevel, options: [...levels] },
-              { label: "Exam board", value: board, set: setBoard, options: [...boards] },
+              { label: "Exam board", value: board, set: setBoard, options: boards },
             ].map((group) => (
               <div key={group.label} className="flex flex-wrap items-center gap-2">
                 <span className="mr-1 w-24 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -159,7 +165,7 @@ function CoursesPage() {
                 >
                   <option value="All">All subjects</option>
                   {subjects.map((s) => (
-                    <option key={s.slug} value={s.slug}>
+                    <option key={s.id} value={s.slug}>
                       {s.name}
                     </option>
                   ))}
@@ -197,7 +203,7 @@ function CoursesPage() {
         ) : (
           <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {visible.map((c, i) => (
-              <Reveal key={c.slug} delay={i * 60}>
+              <Reveal key={c.id} delay={i * 60}>
                 <CourseCard course={c} />
               </Reveal>
             ))}

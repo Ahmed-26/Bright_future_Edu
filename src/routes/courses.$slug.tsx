@@ -1,14 +1,38 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { BookOpen, CalendarDays, CheckCircle2, Clock, GraduationCap, Landmark, UserRound, Wallet } from "lucide-react";
-import { courses } from "@/data/institute";
 import { CourseCard } from "@/components/site/CourseCard";
 import { Reveal } from "@/components/site/Reveal";
+import { fetchPublicContent } from "@/lib/content/server";
+import { seedContent } from "@/lib/content/schema";
 
 export const Route = createFileRoute("/courses/$slug")({
-  loader: ({ params }) => {
-    const course = courses.find((c) => c.slug === params.slug);
+  /**
+   * Resolved in the loader (rather than from the root data) so `head` can build
+   * per-course meta tags during SSR. Falls back to the seed catalogue if the
+   * content read fails, matching the root loader's behaviour.
+   */
+  loader: async ({ params }) => {
+    let catalogue;
+    try {
+      const content = await fetchPublicContent();
+      catalogue = content.collections.courses;
+    } catch {
+      catalogue = seedContent().collections.courses;
+    }
+    if (catalogue.length === 0) catalogue = seedContent().collections.courses;
+
+    const course = catalogue.find((c) => c.slug === params.slug);
     if (!course) throw notFound();
-    return { course };
+
+    const related = catalogue
+      .filter(
+        (c) =>
+          c.slug !== course.slug &&
+          (c.subjectSlug === course.subjectSlug || c.level === course.level),
+      )
+      .slice(0, 3);
+
+    return { course, related };
   },
   head: ({ loaderData }) => {
     const c = loaderData?.course;
@@ -27,10 +51,7 @@ export const Route = createFileRoute("/courses/$slug")({
 });
 
 function CourseDetails() {
-  const { course } = Route.useLoaderData();
-  const related = courses
-    .filter((c) => c.slug !== course.slug && (c.subjectSlug === course.subjectSlug || c.level === course.level))
-    .slice(0, 3);
+  const { course, related } = Route.useLoaderData();
 
   const facts = [
     { Icon: GraduationCap, label: "Level", value: course.level },
@@ -149,7 +170,7 @@ function CourseDetails() {
             <h2 className="text-2xl font-semibold">Related courses</h2>
             <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {related.map((c, i) => (
-                <Reveal key={c.slug} delay={i * 60}>
+                <Reveal key={c.id} delay={i * 60}>
                   <CourseCard course={c} />
                 </Reveal>
               ))}

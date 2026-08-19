@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { subjects } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 
 export const Route = createFileRoute("/subjects")({
   head: () => ({
@@ -49,12 +49,15 @@ const icons: Record<string, typeof Atom> = {
 };
 
 function SubjectsPage() {
+  // Published subjects from the admin panel, in the order set there.
+  const subjects = useCollection("subjects");
+
   return (
     <>
       <PageHeader
         eyebrow="What we teach"
         title="Subjects"
-        description="Twelve core subjects taught by dedicated subject heads, each with syllabus-mapped notes and a decade of past papers."
+        description="Core subjects taught by dedicated subject heads, each with syllabus-mapped notes and a decade of past papers."
       />
 
       <section className="mx-auto max-w-7xl px-5 py-16">
@@ -62,7 +65,7 @@ function SubjectsPage() {
           {subjects.map((s, i) => {
             const Icon = icons[s.slug] ?? BookText;
             return (
-              <Reveal key={s.slug} delay={(i % 3) * 70}>
+              <Reveal key={s.id} delay={(i % 3) * 70}>
                 <article className="group flex h-full flex-col rounded-2xl border border-border bg-card p-7 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-secondary/60 hover:shadow-elegant">
                   <span className="grid size-12 place-items-center rounded-xl bg-muted text-primary transition-colors group-hover:bg-[image:var(--gradient-primary)] group-hover:text-primary-foreground">
                     <Icon className="size-5" />

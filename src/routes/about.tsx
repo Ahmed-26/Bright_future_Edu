@@ -3,7 +3,7 @@ import { Compass, Eye, HeartHandshake, Target } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
 import { Counter } from "@/components/site/Counter";
-import { stats, timeline, whyChooseUs } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 import campus from "@/assets/hero-students.jpg";
 
 export const Route = createFileRoute("/about")({
@@ -49,6 +49,11 @@ const pillars = [
 ];
 
 function AboutPage() {
+  // Statistics, history and "why choose us" are all admin-managed collections.
+  const stats = useCollection("statistics");
+  const timeline = useCollection("timeline");
+  const whyChooseUs = useCollection("whyChooseUs");
+
   return (
     <>
       <PageHeader
@@ -105,7 +110,7 @@ function AboutPage() {
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-5">
             {stats.map((s, i) => (
-              <Reveal key={s.label} delay={i * 60}>
+              <Reveal key={s.id} delay={i * 60}>
                 <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-card">
                   <p className="font-display text-3xl font-semibold text-primary">
                     <Counter value={s.value} suffix={s.suffix} />
@@ -124,7 +129,7 @@ function AboutPage() {
         <h2 className="text-center text-3xl font-semibold">Our history</h2>
         <ol className="mt-12 space-y-8 border-l border-border pl-8">
           {timeline.map((t, i) => (
-            <Reveal key={t.year} as="li" delay={i * 70}>
+            <Reveal key={t.id} as="li" delay={i * 70}>
               <div className="relative">
                 <span className="absolute -left-[41px] top-1.5 size-3 rounded-full bg-[image:var(--gradient-gold)]" />
                 <p className="font-display text-xl font-semibold text-primary">{t.year}</p>
@@ -139,7 +144,7 @@ function AboutPage() {
         <h2 className="text-center text-3xl font-semibold">Why students choose us</h2>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {whyChooseUs.map((w, i) => (
-            <Reveal key={w.title} delay={(i % 4) * 60}>
+            <Reveal key={w.id} delay={(i % 4) * 60}>
               <article className="h-full rounded-2xl border border-border bg-card p-6 shadow-card">
                 <h3 className="text-base font-semibold">{w.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.text}</p>

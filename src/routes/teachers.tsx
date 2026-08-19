@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { teachers } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 
 export const Route = createFileRoute("/teachers")({
   head: () => ({
@@ -23,6 +23,9 @@ export const Route = createFileRoute("/teachers")({
 });
 
 function TeachersPage() {
+  // Published teachers from the admin panel, in the order set there.
+  const teachers = useCollection("teachers");
+
   return (
     <>
       <PageHeader
@@ -34,7 +37,7 @@ function TeachersPage() {
       <section className="mx-auto max-w-7xl px-5 py-16">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {teachers.map((t, i) => (
-            <Reveal key={t.slug} delay={(i % 4) * 70}>
+            <Reveal key={t.id} delay={(i % 4) * 70}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elegant">
                 <div className="relative grid h-44 place-items-center bg-[image:var(--gradient-primary)]">
                   <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_70%_20%,white,transparent_50%)]" />

@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
-import { boards, levels, results, subjects } from "@/data/institute";
+import { levels } from "@/data/institute";
+import { useCollection } from "@/hooks/useSiteContent";
 
 export const Route = createFileRoute("/results")({
   head: () => ({
@@ -22,8 +23,6 @@ export const Route = createFileRoute("/results")({
   }),
   component: ResultsPage,
 });
-
-const years = Array.from(new Set(results.map((r) => r.year))).sort((a, b) => b - a);
 
 function Select({
   label,
@@ -56,21 +55,31 @@ function Select({
 }
 
 function ResultsPage() {
+  const results = useCollection("results");
+  const subjects = useCollection("subjects");
   const [year, setYear] = useState("All");
   const [level, setLevel] = useState("All");
   const [subject, setSubject] = useState("All");
   const [board, setBoard] = useState("All");
 
+  // Year and board options are derived from the live rows so newly published
+  // results bring their own filter entries with them.
+  const years = useMemo(
+    () => Array.from(new Set(results.map((r) => r.year))).sort((a, b) => b - a),
+    [results],
+  );
+  const boards = useMemo(() => Array.from(new Set(results.map((r) => r.board))).sort(), [results]);
+
   const filtered = useMemo(
     () =>
       results.filter(
         (r) =>
-          (year === "All" || String(r.year) === year) &&
+      (year === "All" || String(r.year) === year) &&
           (level === "All" || r.level === level) &&
           (subject === "All" || r.subject === subject) &&
           (board === "All" || r.board === board),
       ),
-    [year, level, subject, board],
+    [results, year, level, subject, board],
   );
 
   return (
@@ -78,16 +87,11 @@ function ResultsPage() {
       <PageHeader
         eyebrow="Academic performance"
         title="Results"
-        description="A transparent record of grades achieved across Cambridge and Edexcel series. All records below are demonstration data."
+        description="A transparent record of grades achieved across Cambridge and Edexcel series."
       />
 
       <section className="mx-auto max-w-7xl px-5 py-16">
-        <p className="rounded-xl border border-accent/40 bg-accent/10 px-5 py-4 text-sm text-foreground">
-          <strong className="font-semibold">Demo data:</strong> the records on this page are
-          placeholders for the design preview and do not represent real students or grades.
-        </p>
-
-        <div className="mt-8 grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-card sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-card sm:grid-cols-2 lg:grid-cols-4">
           <Select label="Year" value={year} onChange={setYear} options={years.map(String)} />
           <Select label="Level" value={level} onChange={setLevel} options={[...levels]} />
           <Select
@@ -96,7 +100,7 @@ function ResultsPage() {
             onChange={setSubject}
             options={subjects.map((s) => s.name)}
           />
-          <Select label="Exam board" value={board} onChange={setBoard} options={[...boards]} />
+          <Select label="Exam board" value={board} onChange={setBoard} options={boards} />
         </div>
 
         {filtered.length === 0 ? (
@@ -109,7 +113,7 @@ function ResultsPage() {
         ) : (
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((r, i) => (
-              <Reveal key={`${r.student}-${r.subject}-${r.year}`} delay={(i % 3) * 60}>
+              <Reveal key={r.id} delay={(i % 3) * 60}>
                 <article className="flex h-full items-start gap-5 rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elegant">
                   <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-gold)] font-display text-2xl font-bold text-accent-foreground">
                     {r.grade}
